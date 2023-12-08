@@ -23,6 +23,9 @@ class Channel {
       }
       return true;
     }());
+    if (_callback != null) {
+      return;
+    }
     _callback = callback;
   }
 
