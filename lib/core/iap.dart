@@ -3,11 +3,11 @@ import 'package:flutter/services.dart';
 import 'iap_callback.dart';
 import 'model.dart';
 
-class StoreKitIap {
+class StoreKit {
   final _channel = const MethodChannel('cn.banzuoshan/store_kit_iap');
   StoreKitIapCallback? _callback;
 
-  StoreKitIap() {
+  StoreKit() {
     _channel.setMethodCallHandler((call) => _listenCallback(call.method, call.arguments));
   }
 
@@ -16,14 +16,14 @@ class StoreKitIap {
     if (opt.productId.isEmpty) {
       throw ArgumentError.value(
         opt.productId,
-        'productId 不能为空',
+        'productId不能为空',
         'productId is empty',
       );
     }
     if (opt.quantity != null && opt.quantity! <= 0) {
       throw ArgumentError.value(
         opt.quantity,
-        '购买数量必须大于 0',
+        '购买数量必须大于0',
         'quantity must be greater than 0',
       );
     }
@@ -59,7 +59,7 @@ class StoreKitIap {
   }
 }
 
-extension StoreKitCallback on StoreKitIap {
+extension StoreKitCallback on StoreKit {
   /// 添加监听器
   void addListener(StoreKitIapCallback callback) {
     assert(() {
