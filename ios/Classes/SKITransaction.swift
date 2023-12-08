@@ -181,8 +181,7 @@ private extension Opt.Purchase {
 
 /// extension on [Trader.Result]
 extension SKITransaction.Result {
-    /// Result名称, 代替code
-    var name: String {
+    var state: String {
         switch self {
         case .verified:
             "verified"
@@ -231,6 +230,6 @@ extension SKITransaction.Result {
 
     /// 用于通过channel回调给flutter
     var json: [String: Any] {
-        ["name": name, "message": message, "description": description, "transaction_id": transactionId]
+        ["state": state, "message": message, "description": description, "transaction_id": transactionId]
     }
 }
