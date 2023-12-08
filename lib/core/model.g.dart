@@ -6,6 +6,14 @@ part of 'model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+Map<String, dynamic> _$PurchaseOptToJson(PurchaseOpt instance) =>
+    <String, dynamic>{
+      'product_id': instance.productId,
+      'quantity': instance.quantity,
+      'uuid': instance.uuid,
+      'extra': instance.extra,
+    };
+
 _$TransactionImpl _$$TransactionImplFromJson(Map<String, dynamic> json) =>
     _$TransactionImpl(
       state: $enumDecodeNullable(_$TransactionStateEnumMap, json['state']) ??
