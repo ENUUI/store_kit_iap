@@ -74,7 +74,8 @@ extension SKITransaction {
 }
 
 extension SKITransaction {
-    /// 交易历史记录包括应用程序尚未通过调用finish()完成的可消耗应用内购买。它不包括已完成的可消耗产品或已完成的非续订订阅，重新购买的非消耗性产品或订阅，或已恢复的购买。
+    /// 交易历史记录包括应用程序尚未通过调用finish()完成的可消耗应用内购买。
+    /// 它不包括已完成的可消耗产品或已完成的非续订订阅，重新购买的非消耗性产品或订阅，或已恢复的购买。
     func all() async -> [SKITransaction.Result] {
         await iterator(Transaction.all)
     }
@@ -94,7 +95,8 @@ extension SKITransaction {
         await iterator(Transaction.currentEntitlements)
     }
 
-    /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
+    /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
+    /// 它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
     func updates() async -> [SKITransaction.Result] {
         await iterator(Transaction.updates)
     }

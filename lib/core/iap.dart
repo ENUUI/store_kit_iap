@@ -4,7 +4,7 @@ import 'iap_callback.dart';
 import 'model.dart';
 
 class StoreKit {
-  final _channel = const MethodChannel('cn.banzuoshan/store_kit_iap');
+  static const _channel = MethodChannel('cn.banzuoshan/store_kit_iap');
   StoreKitIapCallback? _callback;
 
   StoreKit() {
@@ -75,15 +75,19 @@ extension StoreKitCallback on StoreKit {
   }
 
   Future<void> _listenCallback(String method, dynamic arguments) async {
+    assert(() {
+      print('[StoreKit] callback method: $method, arguments: $arguments');
+      return true;
+    }());
     final callback = _callback;
     if (callback == null) {
+      assert(false, '未添加监听器');
       return;
     }
-
     switch (method) {
       case 'purchase_completed':
-        assert(arguments is Map<String, dynamic>);
-        final result = Transaction.fromJson(arguments as Map<String, dynamic>);
+        assert(arguments is Map);
+        final result = Transaction.fromJson((arguments as Map).cast());
         callback.purchase(result);
         break;
       case 'updates_callback':
@@ -105,8 +109,8 @@ extension StoreKitCallback on StoreKit {
   }
 
   List<Transaction> _fromArguments(dynamic arguments) {
-    assert(arguments is List<Map<String, dynamic>>);
-    final list = arguments as List<Map<String, dynamic>>;
-    return list.map((e) => Transaction.fromJson(e)).toList();
+    assert(arguments is List<Map>);
+    final list = arguments as List<Map>;
+    return list.map<Map<String, dynamic>>((e) => e.cast()).map((e) => Transaction.fromJson(e)).toList();
   }
 }
