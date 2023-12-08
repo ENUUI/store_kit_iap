@@ -13,7 +13,15 @@ enum Opt {
         let uuid: String?
         let extra: SKIUserInfo?
 
-        init(_ parameters: [String: Any]) throws {
+        init(_ arguments: Any?) throws {
+            guard let arguments else {
+                throw SKIError.arguments("参数不能为空")
+            }
+
+            guard let parameters = arguments as? [String: Any] else {
+                throw SKIError.arguments("参数类型错误")
+            }
+
             guard let productId = parameters["product_id"] as? String else {
                 throw SKIError.arguments("product_id不能为空")
             }

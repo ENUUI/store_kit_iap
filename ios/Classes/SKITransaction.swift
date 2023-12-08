@@ -2,7 +2,9 @@ import Foundation
 import StoreKit
 
 /// 交易
-enum SKITransaction {
+struct SKITransaction {
+    init() {}
+
     enum Result {
         /// 完成
         case verified(UInt64)
@@ -38,14 +40,14 @@ extension SKITransaction {
         }
     }
 
-    /// 未处理的交易
+    /// 当前的权益序列
     func current(result: @escaping ([Result]) -> Void) {
         Task {
             await result(current())
         }
     }
 
-    /// 未处理的交易
+    /// 当前的权益序列
     func updates(result: @escaping ([Result]) -> Void) {
         Task {
             await result(updates())
@@ -92,7 +94,7 @@ extension SKITransaction {
         await iterator(Transaction.currentEntitlements)
     }
 
-    /// 接收在应用程序外部发生的交易，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
+    /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
     func updates() async -> [SKITransaction.Result] {
         await iterator(Transaction.updates)
     }
