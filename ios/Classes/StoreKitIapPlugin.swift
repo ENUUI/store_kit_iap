@@ -54,8 +54,10 @@ private extension StoreKitIapPlugin {
             result(FlutterError(code: "404", message: "参数错误", details: ""))
             return
         }
-        
-        transaction.finish(id)
+        guard transaction.finish(id) else {
+            result(FlutterError(code: "400", message: "", details: "未找到订单: \(id)"))
+            return
+        }
         result(nil)
     }
     
