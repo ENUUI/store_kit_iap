@@ -18,6 +18,8 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
+        case "vendor_id":
+            result(vendorId())
         case "purchase":
             purchase(call.arguments, result: result)
         case "updates":
@@ -40,6 +42,10 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
 
 /// channel listeners
 private extension StoreKitIapPlugin {
+    func vendorId() -> String? {
+        transaction.deviceVerificationID()
+    }
+
     func purchase(_ arguments: Any?, result: @escaping FlutterResult) {
         do {
             let opt = try Opt.Purchase(arguments)

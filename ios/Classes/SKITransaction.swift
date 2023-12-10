@@ -19,6 +19,10 @@ struct SKITransaction {
         case pending
         case unknown
     }
+    
+    func deviceVerificationID() -> String? {
+        AppStore.deviceVerificationID?.uuidString
+    }
 }
 
 extension SKITransaction {
