@@ -4,7 +4,7 @@ import StoreKit
 /// 交易
 struct SKITransaction {
     init() {}
-
+    
     enum Result {
         /// 完成
         case verified(UInt64)
@@ -20,12 +20,42 @@ struct SKITransaction {
         case unknown
     }
     
-    func deviceVerificationID() -> String? {
-        AppStore.deviceVerificationID?.uuidString
+    fileprivate var transactions: [UInt64: Transaction] = [:]
+    fileprivate lazy var semaphore = DispatchSemaphore(value: 1)
+}
+
+fileprivate extension SKITransaction {
+    func cache(_ ts: [Transaction]) {
+        if ts.isEmpty { return }
+        
+        semaphore.wait()
+        for t in ts {
+            transactions[t.id] = t
+        }
+        semaphore.signal()
+    }
+    
+    func find(_ id: UInt64) -> Transaction? {
+        semaphore.wait()
+        defer semaphore.signal()
+        return transactions.removeValue(forKey: id)
     }
 }
 
 extension SKITransaction {
+    func finish(_ id: UInt64) {
+        guard let t = transactions[id] else { return }
+        
+        Task {
+            await t.finish()
+        }
+    }
+    
+    /// 获取vendor id
+    func deviceVerificationID() -> String? {
+        AppStore.deviceVerificationID?.uuidString
+    }
+    
     /// 支付商品
     func purchase(_ p: Opt.Purchase, result: @escaping (Result) -> Void) {
         Task {
@@ -36,28 +66,28 @@ extension SKITransaction {
             }
         }
     }
-
+    
     /// 未处理的交易
     func unfinished(result: @escaping ([Result]) -> Void) {
         Task {
             await result(unfinished())
         }
     }
-
+    
     /// 当前的权益序列
     func current(result: @escaping ([Result]) -> Void) {
         Task {
             await result(current())
         }
     }
-
+    
     /// 当前的权益序列
     func updates(result: @escaping ([Result]) -> Void) {
         Task {
             await result(updates())
         }
     }
-
+    
     /// 所有交易
     func all(result: @escaping ([Result]) -> Void) {
         Task {
@@ -70,9 +100,9 @@ extension SKITransaction {
     /// 支付商品
     func purchase(_ p: Opt.Purchase) async throws -> SKITransaction.Result {
         let product = try await product(p.productId)
-
+        
         let result = try await product.purchase(options: p.option())
-
+        
         return purchaseResult(result)
     }
 }
@@ -83,12 +113,12 @@ extension SKITransaction {
     func all() async -> [SKITransaction.Result] {
         await iterator(Transaction.all)
     }
-
+    
     /// 需要处理的交易。未处理的交易会在启动时的 updates 中返回
     func unfinished() async -> [SKITransaction.Result] {
         await iterator(Transaction.unfinished)
     }
-
+    
     /// 当前的权益序列会发出用户拥有权益的每个产品的最新交易，具体包括：
     /// - 每个非消耗性应用内购买的交易
     /// - 每个自动续订订阅的最新交易，其Product.SubscriptionInfo.RenewalState状态为subscribed或inGracePeriod
@@ -96,13 +126,17 @@ extension SKITransaction {
     /// - App Store退款或撤销的产品不会出现在当前的权益中。消耗性应用内购买也不会出现在当前的权益中。
     /// [Important] 要获取未完成的消耗性产品的交易，请使用Transaction中的unfinished或all序列。
     func current() async -> [SKITransaction.Result] {
-        await iterator(Transaction.currentEntitlements)
+        let results = await iterator(Transaction.currentEntitlements)
+        cache(results)
+        return results
     }
-
+    
     /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
     /// 它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
     func updates() async -> [SKITransaction.Result] {
-        await iterator(Transaction.updates)
+        let results = await iterator(Transaction.updates)
+        cache(results)
+        return results
     }
 }
 
@@ -112,7 +146,7 @@ private extension SKITransaction {
         for await result in transactions {
             results.append(verificationResult(result))
         }
-
+        
         return results
     }
 }
@@ -124,7 +158,7 @@ private extension SKITransaction {
         guard !products.isEmpty else {
             throw SKError(.invalidOfferIdentifier)
         }
-
+        
         guard let product = products.first(where: { productId == $0.id }) else {
             throw SKIError.arguments("未能找到商品")
         }
@@ -149,15 +183,15 @@ private extension SKITransaction {
             return .unknown
         }
     }
-
+    
     /// 处理交易结果
     func verificationResult(_ result: VerificationResult<Transaction>) -> SKITransaction.Result {
         switch result {
         case let .unverified(_, error):
             // TODO: 如何处理 unverified 时的 transaction
-            .unverified(error)
+                .unverified(error)
         case let .verified(transaction):
-            .verified(transaction.id)
+                .verified(transaction.id)
         }
     }
 }
@@ -166,21 +200,21 @@ private extension Opt.Purchase {
     /// 将 flutter 端传入的参数convert to [Product.PurchaseOption]
     func option() -> Set<Product.PurchaseOption> {
         var options: Set<Product.PurchaseOption> = []
-
+        
         if let uuidString = uuid, let uuid = UUID(uuidString: uuidString) {
             options.insert(.appAccountToken(uuid))
         }
-
+        
         if let quantity {
             options.insert(.quantity(quantity))
         }
-
+        
         if let extra, !extra.isEmpty {
             for (k, v) in extra {
                 options.insert(.custom(key: k, value: v))
             }
         }
-
+        
         return options
     }
 }
@@ -201,7 +235,7 @@ extension SKITransaction.Result {
             "unknown"
         }
     }
-
+    
     /// 当支付成功后，将 transaction.id 回调
     var transactionId: UInt64 {
         if case let .verified(id) = self {
@@ -209,7 +243,7 @@ extension SKITransaction.Result {
         }
         return 0
     }
-
+    
     /// 当前状态描述
     var message: String {
         switch self {
@@ -225,7 +259,7 @@ extension SKITransaction.Result {
             "未知错误"
         }
     }
-
+    
     /// 支付失败描述
     var description: String {
         if case let .unverified(error) = self {
@@ -233,7 +267,7 @@ extension SKITransaction.Result {
         }
         return ""
     }
-
+    
     /// 用于通过channel回调给flutter
     var json: [String: Any] {
         ["state": state, "message": message, "description": description, "transaction_id": transactionId]

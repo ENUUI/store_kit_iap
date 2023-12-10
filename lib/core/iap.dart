@@ -11,6 +11,11 @@ class StoreKit {
     _channel.setMethodCallHandler((call) => _listenCallback(call.method, call.arguments));
   }
 
+  /// 关闭订单
+  Future<void> finish(int transactionId) async {
+    await _channel.invokeMethod('finish_transaction', transactionId);
+  }
+
   Future<String> vendorId() async {
     final result = await _channel.invokeMethod('vendor_id');
     return result as String? ?? '';
