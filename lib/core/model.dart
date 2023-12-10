@@ -27,6 +27,18 @@ enum TransactionState {
   unknown,
 }
 
+extension TransactionStateExt on TransactionState {
+  bool get isVerified => this == TransactionState.verified;
+
+  bool get isUnverified => this == TransactionState.unverified;
+
+  bool get isCancelled => this == TransactionState.cancelled;
+
+  bool get isPending => this == TransactionState.pending;
+
+  bool get isUnknown => this == TransactionState.unknown;
+}
+
 @freezed
 class Transaction with _$Transaction {
   factory Transaction({

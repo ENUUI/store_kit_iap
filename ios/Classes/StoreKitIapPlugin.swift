@@ -28,7 +28,7 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
             updates()
             result(nil)
         case "current":
-            updates()
+            current()
             result(nil)
         case "unfinished":
             unfinished()

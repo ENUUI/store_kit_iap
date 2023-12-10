@@ -101,10 +101,10 @@ extension StoreKitCallback on StoreKit {
         callback.purchase(result);
         break;
       case 'updates_callback':
-        callback.current(_fromArguments(arguments));
+        callback.updates(_fromArguments(arguments));
         break;
       case 'current_callback':
-        callback.updates(_fromArguments(arguments));
+        callback.current(_fromArguments(arguments));
         break;
       case 'unfinished_callback':
         callback.unfinished(_fromArguments(arguments));
@@ -119,8 +119,8 @@ extension StoreKitCallback on StoreKit {
   }
 
   List<Transaction> _fromArguments(dynamic arguments) {
-    assert(arguments is List<Map>);
-    final list = arguments as List<Map>;
-    return list.map<Map<String, dynamic>>((e) => e.cast()).map((e) => Transaction.fromJson(e)).toList();
+    assert(arguments is List);
+    final list = arguments as List;
+    return list.map<Map<String, dynamic>>((e) => (e as Map).cast()).map((e) => Transaction.fromJson(e)).toList();
   }
 }
