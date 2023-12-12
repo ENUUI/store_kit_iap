@@ -1,6 +1,7 @@
 import Foundation
 import StoreKit
 import Dispatch
+import CryptoKit
 
 /// 交易
 class SKITransaction {
@@ -187,9 +188,31 @@ private extension SKITransaction {
             // TODO: 如何处理 unverified 时的 transaction
             return .unverified(error)
         case let .verified(transaction):
+            guard transactionOfDevice(transaction) else {
+                return .unverified(SKIError.device)
+            }
             insert(transaction)
             return .verified(transaction.id)
         }
+    }
+    
+    /// 验证交易是否属于设备的设备验证值
+    // https://developer.apple.com/documentation/storekit/transaction/3749690-deviceverification/
+    func transactionOfDevice(_ transaction: Transaction) -> Bool {
+        guard let deviceVerificationUUID = AppStore.deviceVerificationID else { return false }
+        
+        // Assemble the values to hash.
+        let deviceVerificationIDString = deviceVerificationUUID.uuidString.lowercased()
+        let nonceString = transaction.deviceVerificationNonce.uuidString.lowercased()
+        let hashTargetString = nonceString.appending(deviceVerificationIDString)
+
+        
+        // Compute the hash.
+        let hashTargetData = Data(hashTargetString.utf8)
+        let digest = SHA384.hash(data: hashTargetData)
+        let digestData = Data(digest)
+  
+        return digestData == transaction.deviceVerification
     }
 }
 

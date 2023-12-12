@@ -4,6 +4,7 @@ typealias SKIUserInfo = [String: String]
 
 enum SKIError: Error {
     case arguments(String)
+    case device
 }
 
 enum Opt {
