@@ -18,24 +18,35 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
+        case "eligible_for_intro_offer":
+            // 是否有资格获得试用优惠
+            eligibleForIntroOffer(call.arguments, result: result)
         case "get_product":
+            // 获取商品信息
             getProduct(call.arguments, result: result)
         case "finish_transaction":
+            // 结束交易
             finish(call.arguments, result: result)
         case "vendor_id":
+            // 获取vendorId
             result(vendorId())
         case "purchase":
+            // 购买商品
             purchase(call.arguments, result: result)
         case "updates":
+            /// 监听是否有交易更新
             updates()
             result(nil)
         case "current":
+            // 获取当前可用的交易
             current()
             result(nil)
         case "unfinished":
+            // 获取当前不可用的交易
             unfinished()
             result(nil)
         case "all":
+            // 获取所有交易
             all()
             result(nil)
         default:
@@ -46,17 +57,40 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
 
 /// channel listeners
 private extension StoreKitIapPlugin {
-    func getProduct(_ arguments: Any?, result: @escaping FlutterResult )  {
-        guard let arguments = arguments else {
+    /// 是否有资格获得试用优惠
+    func eligibleForIntroOffer(_ arguments: Any?, result: @escaping FlutterResult) {
+        guard let arguments else {
             result(FlutterError(code: "404", message: "参数错误", details: ""))
             return
         }
-        
+
         guard let pid = arguments as? String else {
             result(FlutterError(code: "404", message: "参数错误", details: ""))
             return
         }
-        
+
+        transaction.eligibleForIntroOffer(pid) {
+            switch $0 {
+            case let .success(enable):
+                result(enable)
+            case let .failure(error):
+                result(FlutterError(code: "500", message: "从苹果获取优惠失败", details: error.localizedDescription))
+            }
+        }
+    }
+
+    // 获取商品信息
+    func getProduct(_ arguments: Any?, result: @escaping FlutterResult) {
+        guard let arguments else {
+            result(FlutterError(code: "404", message: "参数错误", details: ""))
+            return
+        }
+
+        guard let pid = arguments as? String else {
+            result(FlutterError(code: "404", message: "参数错误", details: ""))
+            return
+        }
+
         transaction.getProduct(pid) {
             switch $0 {
             case let .success(data):
@@ -66,13 +100,14 @@ private extension StoreKitIapPlugin {
             }
         }
     }
-    
+
+    /// 结束交易
     func finish(_ arguments: Any?, result: @escaping FlutterResult) {
-        guard let arguments = arguments else {
+        guard let arguments else {
             result(FlutterError(code: "404", message: "参数错误", details: ""))
             return
         }
-        
+
         guard let id = arguments as? UInt64 else {
             result(FlutterError(code: "404", message: "参数错误", details: ""))
             return
@@ -83,11 +118,13 @@ private extension StoreKitIapPlugin {
         }
         result(nil)
     }
-    
+
+    /// 获取vendorId
     func vendorId() -> String? {
         transaction.deviceVerificationID()
     }
 
+    /// 购买商品
     func purchase(_ arguments: Any?, result: @escaping FlutterResult) {
         do {
             let opt = try Opt.Purchase(arguments)
@@ -103,18 +140,22 @@ private extension StoreKitIapPlugin {
         }
     }
 
+    /// 监听是否有交易更新
     func updates() {
         transaction.updates { self.updatesCompleted($0) }
     }
 
+    /// 获取当前可用的交易
     func current() {
         transaction.current { self.currentCompleted($0) }
     }
 
+    /// 获取当前不可用的交易
     func unfinished() {
         transaction.unfinished { self.unfinishedCompleted($0) }
     }
 
+    /// 获取所有交易
     func all() {
         transaction.all { self.allCompleted($0) }
     }

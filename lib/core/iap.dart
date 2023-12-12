@@ -11,6 +11,19 @@ class StoreKit {
     _channel.setMethodCallHandler((call) => _listenCallback(call.method, call.arguments));
   }
 
+  /// 是否有资格获得试用优惠
+  Future<bool> eligibleForIntroOffer(String productId) async {
+    if (productId.isEmpty) {
+      throw ArgumentError.value(
+        productId,
+        'productId不能为空',
+        'productId is empty',
+      );
+    }
+    final result = await _channel.invokeMethod<bool>('eligible_for_intro_offer', productId);
+    return result == true;
+  }
+
   Future getProduct(String productId) async {
     if (productId.isEmpty) {
       throw ArgumentError.value(

@@ -1,12 +1,12 @@
+import CryptoKit
+import Dispatch
 import Foundation
 import StoreKit
-import Dispatch
-import CryptoKit
 
 /// 交易
 class SKITransaction {
     init() {}
-        
+
     enum Result {
         /// 完成
         case verified(UInt64)
@@ -21,19 +21,18 @@ class SKITransaction {
         case pending
         case unknown
     }
-    ///Users/enuui/Workspace/mobile/lib/store_kit_iap/ios/Classes/SKITransaction.swift:34:30 Cannot assign through subscript: 'self' is immutable
-    
-    fileprivate var transactionCaches: [UInt64: Transaction] = [:]
-    fileprivate var semaphore = DispatchSemaphore(value: 1)
+
+    private var transactionCaches: [UInt64: Transaction] = [:]
+    private var semaphore = DispatchSemaphore(value: 1)
 }
 
-fileprivate extension SKITransaction {
+private extension SKITransaction {
     func insert(_ transaction: Transaction) {
         semaphore.wait()
         transactionCaches[transaction.id] = transaction
         semaphore.signal()
     }
-    
+
     func find(_ id: UInt64) -> Transaction? {
         semaphore.wait()
         defer { semaphore.signal() }
@@ -42,12 +41,24 @@ fileprivate extension SKITransaction {
 }
 
 extension SKITransaction {
-    
     /// 获取vendor id
     func deviceVerificationID() -> String? {
         AppStore.deviceVerificationID?.uuidString
     }
-    
+
+    /// 是否有资格获得试用优惠
+    func eligibleForIntroOffer(_ pid: String, result: @escaping (Swift.Result<Bool, Error>) -> Void) {
+        Task {
+            do {
+                let enable = try await eligibleForIntroOffer(pid)
+                result(.success(enable))
+            } catch {
+                result(.failure(error))
+            }
+        }
+    }
+
+    /// 获取商品数据
     func getProduct(_ pid: String, result: @escaping (Swift.Result<Any, Error>) -> Void) {
         Task {
             do {
@@ -59,8 +70,7 @@ extension SKITransaction {
             }
         }
     }
-    
-    
+
     /// 支付商品
     func purchase(_ p: Opt.Purchase, result: @escaping (Result) -> Void) {
         Task {
@@ -71,28 +81,28 @@ extension SKITransaction {
             }
         }
     }
-    
+
     /// 未处理的交易
     func unfinished(result: @escaping ([Result]) -> Void) {
         Task {
             await result(unfinished())
         }
     }
-    
+
     /// 当前的权益序列
     func current(result: @escaping ([Result]) -> Void) {
         Task {
             await result(current())
         }
     }
-    
+
     /// 当前的权益序列
     func updates(result: @escaping ([Result]) -> Void) {
         Task {
             await result(updates())
         }
     }
-    
+
     /// 所有交易
     func all(result: @escaping ([Result]) -> Void) {
         Task {
@@ -105,9 +115,9 @@ extension SKITransaction {
     /// 支付商品
     func purchase(_ p: Opt.Purchase) async throws -> SKITransaction.Result {
         let product = try await product(p.productId)
-        
+
         let result = try await product.purchase(options: p.option())
-        
+
         return purchaseResult(result)
     }
 }
@@ -122,17 +132,18 @@ extension SKITransaction {
         }
         return true
     }
+
     /// 交易历史记录包括应用程序尚未通过调用finish()完成的可消耗应用内购买。
     /// 它不包括已完成的可消耗产品或已完成的非续订订阅，重新购买的非消耗性产品或订阅，或已恢复的购买。
     func all() async -> [SKITransaction.Result] {
         await iterator(Transaction.all)
     }
-    
+
     /// 需要处理的交易。未处理的交易会在启动时的 updates 中返回
     func unfinished() async -> [SKITransaction.Result] {
         await iterator(Transaction.unfinished)
     }
-    
+
     /// 当前的权益序列会发出用户拥有权益的每个产品的最新交易，具体包括：
     /// - 每个非消耗性应用内购买的交易
     /// - 每个自动续订订阅的最新交易，其Product.SubscriptionInfo.RenewalState状态为subscribed或inGracePeriod
@@ -142,7 +153,7 @@ extension SKITransaction {
     func current() async -> [SKITransaction.Result] {
         await iterator(Transaction.currentEntitlements)
     }
-    
+
     /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
     /// 它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
     func updates() async -> [SKITransaction.Result] {
@@ -156,22 +167,32 @@ private extension SKITransaction {
         for await result in transactions {
             results.append(verificationResult(result))
         }
-        
+
         return results
     }
 }
 
 private extension SKITransaction {
+    // 有资格获得试用优惠
+    func eligibleForIntroOffer(_ productId: String) async throws -> Bool {
+        let product = try await product(productId)
+        guard let subscription = product.subscription else {
+            throw SKIError.arguments("商品不是订阅类型")
+        }
+        return await subscription.isEligibleForIntroOffer
+    }
+
     /// 通过id获取商品
     func product(_ productId: String) async throws -> Product {
         let products = try await Product.products(for: [productId])
         guard !products.isEmpty else {
             throw SKError(.invalidOfferIdentifier)
         }
-        
+
         guard let product = products.first(where: { productId == $0.id }) else {
             throw SKIError.arguments("未能找到商品")
         }
+
         return product
     }
 }
@@ -193,7 +214,7 @@ private extension SKITransaction {
             return .unknown
         }
     }
-    
+
     /// 处理交易结果
     func verificationResult(_ result: VerificationResult<Transaction>) -> SKITransaction.Result {
         switch result {
@@ -208,23 +229,22 @@ private extension SKITransaction {
             return .verified(transaction.id)
         }
     }
-    
+
     /// 验证交易是否属于设备的设备验证值
     // https://developer.apple.com/documentation/storekit/transaction/3749690-deviceverification/
     func transactionOfDevice(_ transaction: Transaction) -> Bool {
         guard let deviceVerificationUUID = AppStore.deviceVerificationID else { return false }
-        
+
         // Assemble the values to hash.
         let deviceVerificationIDString = deviceVerificationUUID.uuidString.lowercased()
         let nonceString = transaction.deviceVerificationNonce.uuidString.lowercased()
         let hashTargetString = nonceString.appending(deviceVerificationIDString)
 
-        
         // Compute the hash.
         let hashTargetData = Data(hashTargetString.utf8)
         let digest = SHA384.hash(data: hashTargetData)
         let digestData = Data(digest)
-  
+
         return digestData == transaction.deviceVerification
     }
 }
@@ -233,21 +253,21 @@ private extension Opt.Purchase {
     /// 将 flutter 端传入的参数convert to [Product.PurchaseOption]
     func option() -> Set<Product.PurchaseOption> {
         var options: Set<Product.PurchaseOption> = []
-        
+
         if let uuidString = uuid, let uuid = UUID(uuidString: uuidString) {
             options.insert(.appAccountToken(uuid))
         }
-        
+
         if let quantity {
             options.insert(.quantity(quantity))
         }
-        
+
         if let extra, !extra.isEmpty {
             for (k, v) in extra {
                 options.insert(.custom(key: k, value: v))
             }
         }
-        
+
         return options
     }
 }
@@ -268,7 +288,7 @@ extension SKITransaction.Result {
             "unknown"
         }
     }
-    
+
     /// 当支付成功后，将 transaction.id 回调
     var transactionId: UInt64 {
         if case let .verified(id) = self {
@@ -276,7 +296,7 @@ extension SKITransaction.Result {
         }
         return 0
     }
-    
+
     /// 当前状态描述
     var message: String {
         switch self {
@@ -292,7 +312,7 @@ extension SKITransaction.Result {
             "未知错误"
         }
     }
-    
+
     /// 支付失败描述
     var description: String {
         if case let .unverified(error) = self {
@@ -300,7 +320,7 @@ extension SKITransaction.Result {
         }
         return ""
     }
-    
+
     /// 用于通过channel回调给flutter
     var json: [String: Any] {
         ["state": state, "message": message, "description": description, "transaction_id": transactionId]
