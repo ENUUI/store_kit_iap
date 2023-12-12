@@ -126,21 +126,21 @@ extension SKITransaction {
     /// - App Store退款或撤销的产品不会出现在当前的权益中。消耗性应用内购买也不会出现在当前的权益中。
     /// [Important] 要获取未完成的消耗性产品的交易，请使用Transaction中的unfinished或all序列。
     func current() async -> [SKITransaction.Result] {
-        await iterator(Transaction.currentEntitlements, cache: true)
+        await iterator(Transaction.currentEntitlements)
     }
     
     /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
     /// 它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
     func updates() async -> [SKITransaction.Result] {
-        await iterator(Transaction.updates, cache: true)
+        await iterator(Transaction.updates)
     }
 }
 
 private extension SKITransaction {
-    func iterator(_ transactions: Transaction.Transactions, cache: Bool = false) async -> [SKITransaction.Result] {
+    func iterator(_ transactions: Transaction.Transactions) async -> [SKITransaction.Result] {
         var results: [SKITransaction.Result] = []
         for await result in transactions {
-            results.append(verificationResult(result, cache: cache))
+            results.append(verificationResult(result))
         }
         
         return results
@@ -181,13 +181,13 @@ private extension SKITransaction {
     }
     
     /// 处理交易结果
-    func verificationResult(_ result: VerificationResult<Transaction>, cache: Bool = false) -> SKITransaction.Result {
+    func verificationResult(_ result: VerificationResult<Transaction>) -> SKITransaction.Result {
         switch result {
         case let .unverified(_, error):
             // TODO: 如何处理 unverified 时的 transaction
             return .unverified(error)
         case let .verified(transaction):
-            if cache {insert(transaction)}
+            insert(transaction)
             return .verified(transaction.id)
         }
     }
