@@ -11,6 +11,17 @@ class StoreKit {
     _channel.setMethodCallHandler((call) => _listenCallback(call.method, call.arguments));
   }
 
+  Future getProduct(String productId) async {
+    if (productId.isEmpty) {
+      throw ArgumentError.value(
+        productId,
+        'productId不能为空',
+        'productId is empty',
+      );
+    }
+    return await _channel.invokeMethod('get_product', productId);
+  }
+
   /// 关闭订单
   Future<void> finish(int transactionId) async {
     await _channel.invokeMethod('finish_transaction', transactionId);

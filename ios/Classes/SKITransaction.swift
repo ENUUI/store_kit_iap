@@ -6,7 +6,7 @@ import CryptoKit
 /// 交易
 class SKITransaction {
     init() {}
-    
+        
     enum Result {
         /// 完成
         case verified(UInt64)
@@ -47,6 +47,19 @@ extension SKITransaction {
     func deviceVerificationID() -> String? {
         AppStore.deviceVerificationID?.uuidString
     }
+    
+    func getProduct(_ pid: String, result: @escaping (Swift.Result<Any, Error>) -> Void) {
+        Task {
+            do {
+                let product = try await product(pid)
+                let jsonObj = try JSONSerialization.jsonObject(with: product.jsonRepresentation)
+                result(.success(jsonObj))
+            } catch {
+                result(.failure(error))
+            }
+        }
+    }
+    
     
     /// 支付商品
     func purchase(_ p: Opt.Purchase, result: @escaping (Result) -> Void) {

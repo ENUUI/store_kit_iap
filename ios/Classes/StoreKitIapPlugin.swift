@@ -18,6 +18,8 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
+        case "get_product":
+            getProduct(call.arguments, result: result)
         case "finish_transaction":
             finish(call.arguments, result: result)
         case "vendor_id":
@@ -44,6 +46,27 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
 
 /// channel listeners
 private extension StoreKitIapPlugin {
+    func getProduct(_ arguments: Any?, result: @escaping FlutterResult )  {
+        guard let arguments = arguments else {
+            result(FlutterError(code: "404", message: "参数错误", details: ""))
+            return
+        }
+        
+        guard let pid = arguments as? String else {
+            result(FlutterError(code: "404", message: "参数错误", details: ""))
+            return
+        }
+        
+        transaction.getProduct(pid) {
+            switch $0 {
+            case let .success(data):
+                result(data)
+            case let .failure(error):
+                result(FlutterError(code: "500", message: "从苹果获取商品失败", details: error.localizedDescription))
+            }
+        }
+    }
+    
     func finish(_ arguments: Any?, result: @escaping FlutterResult) {
         guard let arguments = arguments else {
             result(FlutterError(code: "404", message: "参数错误", details: ""))
