@@ -90,9 +90,16 @@ extension SKITransaction {
     }
 
     /// 当前的权益序列
+    /// As mentioned before, this only works on release mode and doesn't work on debug mode without StoreKit Testing, that is without a Configuration.storekit.
+    /// https://stackoverflow.com/questions/69768519/appstore-sync-not-restoring-purchases
     func current(result: @escaping ([Result]) -> Void) {
         Task {
-            await result(current())
+            do {
+                try await AppStore.sync()
+                await result(current())
+            } catch {
+                result([.unverified(error)])
+            }
         }
     }
 
