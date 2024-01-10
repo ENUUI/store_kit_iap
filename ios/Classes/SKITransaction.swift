@@ -98,7 +98,11 @@ extension SKITransaction {
                 try await AppStore.sync()
                 await result(current())
             } catch {
-                result([.unverified(error)])
+                if case StoreKitError.userCancelled = error {
+                    result([.cancelled])
+                } else {
+                    result([.unverified(error)])
+                }
             }
         }
     }
@@ -312,7 +316,7 @@ extension SKITransaction.Result {
         case .unverified:
             "支付失败"
         case .cancelled:
-            "以取消"
+            "已取消"
         case .pending:
             "待处理"
         case .unknown:
