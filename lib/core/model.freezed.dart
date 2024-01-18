@@ -21,9 +21,9 @@ Transaction _$TransactionFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Transaction {
   TransactionState get state => throw _privateConstructorUsedError;
-  String get message => throw _privateConstructorUsedError;
-  String get description => throw _privateConstructorUsedError;
-  int get transactionId => throw _privateConstructorUsedError;
+  String get message => throw _privateConstructorUsedError; // 信息
+  String get description => throw _privateConstructorUsedError; // 失败时的错误信息
+  Trade? get trade => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 }
@@ -31,11 +31,11 @@ mixin _$Transaction {
 /// @nodoc
 @JsonSerializable()
 class _$TransactionImpl implements _Transaction {
-  _$TransactionImpl(
+  const _$TransactionImpl(
       {this.state = TransactionState.unknown,
       this.message = '',
       this.description = '',
-      this.transactionId = 0});
+      this.trade});
 
   factory _$TransactionImpl.fromJson(Map<String, dynamic> json) =>
       _$$TransactionImplFromJson(json);
@@ -46,16 +46,17 @@ class _$TransactionImpl implements _Transaction {
   @override
   @JsonKey()
   final String message;
+// 信息
   @override
   @JsonKey()
   final String description;
+// 失败时的错误信息
   @override
-  @JsonKey()
-  final int transactionId;
+  final Trade? trade;
 
   @override
   String toString() {
-    return 'Transaction(state: $state, message: $message, description: $description, transactionId: $transactionId)';
+    return 'Transaction(state: $state, message: $message, description: $description, trade: $trade)';
   }
 
   @override
@@ -67,14 +68,13 @@ class _$TransactionImpl implements _Transaction {
             (identical(other.message, message) || other.message == message) &&
             (identical(other.description, description) ||
                 other.description == description) &&
-            (identical(other.transactionId, transactionId) ||
-                other.transactionId == transactionId));
+            (identical(other.trade, trade) || other.trade == trade));
   }
 
   @JsonKey(ignore: true)
   @override
   int get hashCode =>
-      Object.hash(runtimeType, state, message, description, transactionId);
+      Object.hash(runtimeType, state, message, description, trade);
 
   @override
   Map<String, dynamic> toJson() {
@@ -85,11 +85,11 @@ class _$TransactionImpl implements _Transaction {
 }
 
 abstract class _Transaction implements Transaction {
-  factory _Transaction(
+  const factory _Transaction(
       {final TransactionState state,
       final String message,
       final String description,
-      final int transactionId}) = _$TransactionImpl;
+      final Trade? trade}) = _$TransactionImpl;
 
   factory _Transaction.fromJson(Map<String, dynamic> json) =
       _$TransactionImpl.fromJson;
@@ -98,8 +98,82 @@ abstract class _Transaction implements Transaction {
   TransactionState get state;
   @override
   String get message;
-  @override
+  @override // 信息
   String get description;
+  @override // 失败时的错误信息
+  Trade? get trade;
+}
+
+Trade _$TradeFromJson(Map<String, dynamic> json) {
+  return _Trade.fromJson(json);
+}
+
+/// @nodoc
+mixin _$Trade {
+  int get id => throw _privateConstructorUsedError;
+  int get originalId => throw _privateConstructorUsedError;
+  TradeEnv get env => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$TradeImpl implements _Trade {
+  const _$TradeImpl(
+      {this.id = 0, this.originalId = 0, this.env = TradeEnv.unknown});
+
+  factory _$TradeImpl.fromJson(Map<String, dynamic> json) =>
+      _$$TradeImplFromJson(json);
+
   @override
-  int get transactionId;
+  @JsonKey()
+  final int id;
+  @override
+  @JsonKey()
+  final int originalId;
+  @override
+  @JsonKey()
+  final TradeEnv env;
+
+  @override
+  String toString() {
+    return 'Trade(id: $id, originalId: $originalId, env: $env)';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TradeImpl &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.originalId, originalId) ||
+                other.originalId == originalId) &&
+            (identical(other.env, env) || other.env == env));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, id, originalId, env);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$TradeImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _Trade implements Trade {
+  const factory _Trade(
+      {final int id, final int originalId, final TradeEnv env}) = _$TradeImpl;
+
+  factory _Trade.fromJson(Map<String, dynamic> json) = _$TradeImpl.fromJson;
+
+  @override
+  int get id;
+  @override
+  int get originalId;
+  @override
+  TradeEnv get env;
 }

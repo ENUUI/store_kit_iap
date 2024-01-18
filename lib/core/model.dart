@@ -41,15 +41,36 @@ extension TransactionStateExt on TransactionState {
 
 @freezed
 class Transaction with _$Transaction {
-  factory Transaction({
+  const factory Transaction({
     @Default(TransactionState.unknown) final TransactionState state,
     @Default('') final String message, // 信息
     @Default('') final String description, // 失败时的错误信息
-    @Default(0) final int transactionId, // 交易 id，当 state 为 verified 时有效
+    final Trade? trade,
   }) = _Transaction;
 
-  factory Transaction.fromJson(Map<String, dynamic> json) =>
-      _$TransactionFromJson(json);
+  factory Transaction.fromJson(Map<String, dynamic> json) => _$TransactionFromJson(json);
+}
+
+enum TradeEnv {
+  @JsonValue('sandbox')
+  sandbox,
+  @JsonValue('production')
+  production,
+  @JsonValue('xcode')
+  xcode,
+  @JsonValue('unknown')
+  unknown,
+}
+
+@freezed
+class Trade with _$Trade {
+  const factory Trade({
+    @Default(0) final int id,
+    @Default(0) final int originalId,
+    @Default(TradeEnv.unknown) final TradeEnv env,
+  }) = _Trade;
+
+  factory Trade.fromJson(Map<String, dynamic> json) => _$TradeFromJson(json);
 }
 
 @JsonSerializable(createFactory: false, createToJson: true)

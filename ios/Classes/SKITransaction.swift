@@ -6,10 +6,16 @@ import StoreKit
 /// 交易
 class SKITransaction {
     init() {}
+    
+    struct Trade {
+        let id: UInt64
+        let originalID: UInt64
+        let env: String
+    }
 
     enum Result {
         /// 完成
-        case verified(UInt64)
+        case verified(Trade)
         /// 失败
         ///  - 获取商品失败
         ///  - 拉起支付失败
@@ -237,7 +243,7 @@ private extension SKITransaction {
                 return .unverified(SKIError.device)
             }
             insert(transaction)
-            return .verified(transaction.id)
+            return .verified(transaction.toTrade())
         }
     }
 
@@ -301,11 +307,11 @@ extension SKITransaction.Result {
     }
 
     /// 当支付成功后，将 transaction.id 回调
-    var transactionId: UInt64 {
-        if case let .verified(id) = self {
-            return id
+    var trade: [String: Any]? {
+        if case let .verified(trade) = self {
+            return trade.toJson()
         }
-        return 0
+        return nil
     }
 
     /// 当前状态描述
@@ -333,7 +339,26 @@ extension SKITransaction.Result {
     }
 
     /// 用于通过channel回调给flutter
-    var json: [String: Any] {
-        ["state": state, "message": message, "description": description, "transaction_id": transactionId]
+    var json: [String: Any?] {
+        ["state": state, "message": message, "description": description, "trade": trade]
+    }
+}
+
+extension StoreKit.Transaction {
+    func toTrade() -> SKITransaction.Trade {
+        var env: String = ""
+        if #available(iOS 16.0, *) {
+            env = environment.rawValue.lowercased()
+        } else {
+            env = environmentStringRepresentation.lowercased()
+        }
+        
+        return SKITransaction.Trade(id: id, originalID: originalID, env: env)
+    }
+}
+
+extension SKITransaction.Trade {
+    func toJson() -> [String: Any] {
+        ["id": id, "original_id": originalID, "env": env]
     }
 }
