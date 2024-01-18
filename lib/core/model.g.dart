@@ -61,3 +61,21 @@ const _$TradeEnvEnumMap = {
   TradeEnv.xcode: 'xcode',
   TradeEnv.unknown: 'unknown',
 };
+
+_$EligibleOfferImpl _$$EligibleOfferImplFromJson(Map<String, dynamic> json) =>
+    _$EligibleOfferImpl(
+      state: json['state'] as bool? ?? false,
+      offer: json['offer'] as bool? ?? false,
+      message: json['message'] as String? ?? '',
+      details: json['details'] as String? ?? '',
+      productId: json['product_id'] as String? ?? '',
+    );
+
+Map<String, dynamic> _$$EligibleOfferImplToJson(_$EligibleOfferImpl instance) =>
+    <String, dynamic>{
+      'state': instance.state,
+      'offer': instance.offer,
+      'message': instance.message,
+      'details': instance.details,
+      'product_id': instance.productId,
+    };

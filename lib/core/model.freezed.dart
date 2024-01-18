@@ -177,3 +177,101 @@ abstract class _Trade implements Trade {
   @override
   TradeEnv get env;
 }
+
+EligibleResult _$EligibleResultFromJson(Map<String, dynamic> json) {
+  return _EligibleOffer.fromJson(json);
+}
+
+/// @nodoc
+mixin _$EligibleResult {
+  bool get state => throw _privateConstructorUsedError;
+  bool get offer => throw _privateConstructorUsedError;
+  String get message => throw _privateConstructorUsedError;
+  String get details => throw _privateConstructorUsedError;
+  String get productId => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$EligibleOfferImpl implements _EligibleOffer {
+  const _$EligibleOfferImpl(
+      {this.state = false,
+      this.offer = false,
+      this.message = '',
+      this.details = '',
+      this.productId = ''});
+
+  factory _$EligibleOfferImpl.fromJson(Map<String, dynamic> json) =>
+      _$$EligibleOfferImplFromJson(json);
+
+  @override
+  @JsonKey()
+  final bool state;
+  @override
+  @JsonKey()
+  final bool offer;
+  @override
+  @JsonKey()
+  final String message;
+  @override
+  @JsonKey()
+  final String details;
+  @override
+  @JsonKey()
+  final String productId;
+
+  @override
+  String toString() {
+    return 'EligibleResult(state: $state, offer: $offer, message: $message, details: $details, productId: $productId)';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$EligibleOfferImpl &&
+            (identical(other.state, state) || other.state == state) &&
+            (identical(other.offer, offer) || other.offer == offer) &&
+            (identical(other.message, message) || other.message == message) &&
+            (identical(other.details, details) || other.details == details) &&
+            (identical(other.productId, productId) ||
+                other.productId == productId));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, state, offer, message, details, productId);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$EligibleOfferImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _EligibleOffer implements EligibleResult {
+  const factory _EligibleOffer(
+      {final bool state,
+      final bool offer,
+      final String message,
+      final String details,
+      final String productId}) = _$EligibleOfferImpl;
+
+  factory _EligibleOffer.fromJson(Map<String, dynamic> json) =
+      _$EligibleOfferImpl.fromJson;
+
+  @override
+  bool get state;
+  @override
+  bool get offer;
+  @override
+  String get message;
+  @override
+  String get details;
+  @override
+  String get productId;
+}

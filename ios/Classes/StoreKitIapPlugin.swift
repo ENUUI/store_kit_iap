@@ -57,7 +57,7 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
 
 /// channel listeners
 private extension StoreKitIapPlugin {
-    /// 是否有资格获得试用优惠
+    /// 是否有资格获得试用优惠,  也有可能超时，所以通过channel回调
     func eligibleForIntroOffer(_ arguments: Any?, result: @escaping FlutterResult) {
         guard let arguments else {
             result(FlutterError(code: "404", message: "参数错误", details: ""))
@@ -69,12 +69,14 @@ private extension StoreKitIapPlugin {
             return
         }
 
+        result(nil)
+        
         transaction.eligibleForIntroOffer(pid) {
             switch $0 {
             case let .success(enable):
-                result(enable)
+                self.eligibleCompleted(["offer": enable, "state": true, "product_id": pid])
             case let .failure(error):
-                result(FlutterError(code: "500", message: "从苹果获取优惠失败", details: error.localizedDescription))
+                self.eligibleCompleted(["message": "从苹果获取优惠失败", "state": false, "details": error.localizedDescription, "product_id": pid])
             }
         }
     }
@@ -166,27 +168,31 @@ private extension StoreKitIapPlugin {
     func purchaseCompleted(_ result: SKITransaction.Result) {
         invoke("purchase_completed", arguments: result.json)
     }
-
+    
     func updatesCompleted(_ results: [SKITransaction.Result]) {
         resultsCompleted("updates_callback", results: results)
     }
-
+    
     func currentCompleted(_ results: [SKITransaction.Result]) {
         resultsCompleted("current_callback", results: results)
     }
-
+    
     func unfinishedCompleted(_ results: [SKITransaction.Result]) {
         resultsCompleted("unfinished_callback", results: results)
     }
-
+    
     func allCompleted(_ results: [SKITransaction.Result]) {
         resultsCompleted("all_callback", results: results)
     }
-
+    
     func resultsCompleted(_ method: String, results: [SKITransaction.Result]) {
         invoke(method, arguments: results.map(\.json))
     }
-
+    
+    func eligibleCompleted(_ result: [String: Any]) {
+        invoke("eligible_callback", arguments: result)
+    }
+    
     func invoke(_ method: String, arguments: Any? = nil) {
         let invokeFn = { self.channel.invokeMethod(method, arguments: arguments) }
 
