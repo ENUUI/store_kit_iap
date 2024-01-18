@@ -96,17 +96,3 @@ class PurchaseOpt {
 
   Map<String, dynamic> toJson() => _$PurchaseOptToJson(this);
 }
-
-// 查询商品是否享受优惠
-@freezed
-class EligibleResult with _$EligibleResult {
-  const factory EligibleResult({
-    @Default(false) final bool state,
-    @Default(false) final bool offer,
-    @Default('') final String message,
-    @Default('') final String details,
-    @Default('') final String productId,
-  }) = _EligibleOffer;
-
-  factory EligibleResult.fromJson(Map<String, dynamic> json) => _$EligibleResultFromJson(json);
-}

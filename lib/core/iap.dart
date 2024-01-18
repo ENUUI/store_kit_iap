@@ -12,7 +12,7 @@ class StoreKit {
   }
 
   /// 是否有资格获得试用优惠
-  Future<void> eligibleForIntroOffer(String productId) async {
+  Future<bool> eligibleForIntroOffer(String productId) async {
     if (productId.isEmpty) {
       throw ArgumentError.value(
         productId,
@@ -20,7 +20,8 @@ class StoreKit {
         'productId is empty',
       );
     }
-    await _channel.invokeMethod('eligible_for_intro_offer', productId);
+    final result = await _channel.invokeMethod<bool>('eligible_for_intro_offer', productId);
+    return result == true;
   }
 
   Future getProduct(String productId) async {
@@ -135,9 +136,6 @@ extension StoreKitCallback on StoreKit {
       case 'all_callback':
         callback.all(_fromArguments(arguments));
         break;
-      case 'eligible_callback':
-        final result = EligibleResult.fromJson((arguments as Map).cast());
-        callback.eligibleForIntroOffer(result);
       default:
         assert(false, '未知的方法 $method');
         break;
