@@ -60,7 +60,7 @@ class _$TransactionImpl implements _Transaction {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$TransactionImpl &&
@@ -142,7 +142,7 @@ class _$TradeImpl implements _Trade {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$TradeImpl &&
@@ -176,4 +176,239 @@ abstract class _Trade implements Trade {
   int get originalId;
   @override
   TradeEnv get env;
+}
+
+EligibleResult _$EligibleResultFromJson(Map<String, dynamic> json) {
+  return _EligibleResult.fromJson(json);
+}
+
+/// @nodoc
+mixin _$EligibleResult {
+  String get requestId => throw _privateConstructorUsedError; // 是否有资格
+  String get productId => throw _privateConstructorUsedError; // 是否有资格
+  bool get offer => throw _privateConstructorUsedError; // 是否享受优惠
+  bool get state => throw _privateConstructorUsedError; // 请求是否成功
+  String get message => throw _privateConstructorUsedError; // 错误信息
+  String get details => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$EligibleResultImpl implements _EligibleResult {
+  const _$EligibleResultImpl(
+      {this.requestId = '',
+      this.productId = '',
+      this.offer = false,
+      this.state = false,
+      this.message = '',
+      this.details = ''});
+
+  factory _$EligibleResultImpl.fromJson(Map<String, dynamic> json) =>
+      _$$EligibleResultImplFromJson(json);
+
+  @override
+  @JsonKey()
+  final String requestId;
+// 是否有资格
+  @override
+  @JsonKey()
+  final String productId;
+// 是否有资格
+  @override
+  @JsonKey()
+  final bool offer;
+// 是否享受优惠
+  @override
+  @JsonKey()
+  final bool state;
+// 请求是否成功
+  @override
+  @JsonKey()
+  final String message;
+// 错误信息
+  @override
+  @JsonKey()
+  final String details;
+
+  @override
+  String toString() {
+    return 'EligibleResult(requestId: $requestId, productId: $productId, offer: $offer, state: $state, message: $message, details: $details)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$EligibleResultImpl &&
+            (identical(other.requestId, requestId) ||
+                other.requestId == requestId) &&
+            (identical(other.productId, productId) ||
+                other.productId == productId) &&
+            (identical(other.offer, offer) || other.offer == offer) &&
+            (identical(other.state, state) || other.state == state) &&
+            (identical(other.message, message) || other.message == message) &&
+            (identical(other.details, details) || other.details == details));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType, requestId, productId, offer, state, message, details);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$EligibleResultImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _EligibleResult implements EligibleResult {
+  const factory _EligibleResult(
+      {final String requestId,
+      final String productId,
+      final bool offer,
+      final bool state,
+      final String message,
+      final String details}) = _$EligibleResultImpl;
+
+  factory _EligibleResult.fromJson(Map<String, dynamic> json) =
+      _$EligibleResultImpl.fromJson;
+
+  @override
+  String get requestId;
+  @override // 是否有资格
+  String get productId;
+  @override // 是否有资格
+  bool get offer;
+  @override // 是否享受优惠
+  bool get state;
+  @override // 请求是否成功
+  String get message;
+  @override // 错误信息
+  String get details;
+}
+
+ProductResult _$ProductResultFromJson(Map<String, dynamic> json) {
+  return _ProductResult.fromJson(json);
+}
+
+/// @nodoc
+mixin _$ProductResult {
+  String get requestId => throw _privateConstructorUsedError; // 是否有资格
+  String get productId => throw _privateConstructorUsedError; // 是否有资格
+  Map<String, dynamic> get product =>
+      throw _privateConstructorUsedError; // 是否享受优惠
+  bool get state => throw _privateConstructorUsedError; // 请求是否成功
+  String get message => throw _privateConstructorUsedError; // 错误信息
+  String get details => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$ProductResultImpl implements _ProductResult {
+  _$ProductResultImpl(
+      {this.requestId = '',
+      this.productId = '',
+      final Map<String, dynamic> product = const <String, dynamic>{},
+      this.state = false,
+      this.message = '',
+      this.details = ''})
+      : _product = product;
+
+  factory _$ProductResultImpl.fromJson(Map<String, dynamic> json) =>
+      _$$ProductResultImplFromJson(json);
+
+  @override
+  @JsonKey()
+  final String requestId;
+// 是否有资格
+  @override
+  @JsonKey()
+  final String productId;
+// 是否有资格
+  final Map<String, dynamic> _product;
+// 是否有资格
+  @override
+  @JsonKey()
+  Map<String, dynamic> get product {
+    if (_product is EqualUnmodifiableMapView) return _product;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_product);
+  }
+
+// 是否享受优惠
+  @override
+  @JsonKey()
+  final bool state;
+// 请求是否成功
+  @override
+  @JsonKey()
+  final String message;
+// 错误信息
+  @override
+  @JsonKey()
+  final String details;
+
+  @override
+  String toString() {
+    return 'ProductResult(requestId: $requestId, productId: $productId, product: $product, state: $state, message: $message, details: $details)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ProductResultImpl &&
+            (identical(other.requestId, requestId) ||
+                other.requestId == requestId) &&
+            (identical(other.productId, productId) ||
+                other.productId == productId) &&
+            const DeepCollectionEquality().equals(other._product, _product) &&
+            (identical(other.state, state) || other.state == state) &&
+            (identical(other.message, message) || other.message == message) &&
+            (identical(other.details, details) || other.details == details));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, requestId, productId,
+      const DeepCollectionEquality().hash(_product), state, message, details);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$ProductResultImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _ProductResult implements ProductResult {
+  factory _ProductResult(
+      {final String requestId,
+      final String productId,
+      final Map<String, dynamic> product,
+      final bool state,
+      final String message,
+      final String details}) = _$ProductResultImpl;
+
+  factory _ProductResult.fromJson(Map<String, dynamic> json) =
+      _$ProductResultImpl.fromJson;
+
+  @override
+  String get requestId;
+  @override // 是否有资格
+  String get productId;
+  @override // 是否有资格
+  Map<String, dynamic> get product;
+  @override // 是否享受优惠
+  bool get state;
+  @override // 请求是否成功
+  String get message;
+  @override // 错误信息
+  String get details;
 }

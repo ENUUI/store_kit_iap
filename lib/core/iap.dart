@@ -12,7 +12,7 @@ class StoreKit {
   }
 
   /// 是否有资格获得试用优惠
-  Future<bool> eligibleForIntroOffer(String productId) async {
+  Future<void> eligibleForIntroOffer(String productId, {String requestId = ''}) async {
     if (productId.isEmpty) {
       throw ArgumentError.value(
         productId,
@@ -20,11 +20,10 @@ class StoreKit {
         'productId is empty',
       );
     }
-    final result = await _channel.invokeMethod<bool>('eligible_for_intro_offer', productId);
-    return result == true;
+    await _channel.invokeMethod('eligible_for_intro_offer', {'product_id': productId, 'request_id': requestId});
   }
 
-  Future getProduct(String productId) async {
+  Future<void> getProduct(String productId, {String requestId = ''}) async {
     if (productId.isEmpty) {
       throw ArgumentError.value(
         productId,
@@ -32,7 +31,7 @@ class StoreKit {
         'productId is empty',
       );
     }
-    return await _channel.invokeMethod('get_product', productId);
+    await _channel.invokeMethod('get_product', {'product_id': productId, 'request_id': requestId});
   }
 
   /// 关闭订单
@@ -46,7 +45,7 @@ class StoreKit {
   }
 
   /// 支付
-  Future<void> purchase(PurchaseOpt opt) async {
+  Future<void> purchase(PurchaseOpt opt, {String requestId = ''}) async {
     if (opt.productId.isEmpty) {
       throw ArgumentError.value(
         opt.productId,
@@ -61,8 +60,9 @@ class StoreKit {
         'quantity must be greater than 0',
       );
     }
-
-    await _channel.invokeMethod('purchase', opt.toJson());
+    final arguments = opt.toJson();
+    arguments['request_id'] = requestId;
+    await _channel.invokeMethod('purchase', arguments);
   }
 
   /// 当前的权益序列会发出用户拥有权益的每个产品的最新交易，具体包括：
@@ -71,25 +71,25 @@ class StoreKit {
   /// - 每个非续订订阅的最新交易，包括已完成的订阅
   /// - App Store退款或撤销的产品不会出现在当前的权益中。消耗性应用内购买也不会出现在当前的权益中。
   /// Important: 要获取未完成的消耗性产品的交易，请使用Transaction中的unfinished或all序列。
-  Future<void> current() async {
-    await _channel.invokeMethod('current');
+  Future<void> current({String requestId = ''}) async {
+    await _channel.invokeMethod('current', requestId);
   }
 
   /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
   /// 它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
-  Future<void> updates() async {
-    await _channel.invokeMethod('updates');
+  Future<void> updates({String requestId = ''}) async {
+    await _channel.invokeMethod('updates', requestId);
   }
 
   /// 需要处理的交易。未处理的交易会在启动时的 updates 中返回
-  Future<void> unfinished() async {
-    await _channel.invokeMethod('unfinished');
+  Future<void> unfinished({String requestId = ''}) async {
+    await _channel.invokeMethod('unfinished', requestId);
   }
 
   /// 交易历史记录包括应用程序尚未通过调用finish()完成的可消耗应用内购买。
   /// 它不包括已完成的可消耗产品或已完成的非续订订阅，重新购买的非消耗性产品或订阅，或已恢复的购买。
-  Future<void> all() async {
-    await _channel.invokeMethod('all');
+  Future<void> all({String requestId = ''}) async {
+    await _channel.invokeMethod('all', requestId);
   }
 }
 
@@ -136,6 +136,9 @@ extension StoreKitCallback on StoreKit {
       case 'all_callback':
         callback.all(_fromArguments(arguments));
         break;
+      case 'product_callback':
+        final result = ProductResult.fromJson((arguments as Map).cast());
+        callback.productCallback(result);
       default:
         assert(false, '未知的方法 $method');
         break;

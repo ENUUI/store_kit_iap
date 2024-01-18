@@ -27,4 +27,12 @@ abstract class StoreKitIapCallback {
   /// 交易历史记录包括应用程序尚未通过调用finish()完成的可消耗应用内购买。
   /// 它不包括已完成的可消耗产品或已完成的非续订订阅，重新购买的非消耗性产品或订阅，或已恢复的购买。
   void all(List<Transaction> transactions) {}
+
+  /// Callback after invoking [StoreKitIap.eligibleForIntroOffer]
+  /// 是否可享受商品的优惠的回调
+  void eligibleCallback(EligibleResult result) {}
+
+  /// Callback after invoking [StoreKitIap.product]
+  /// 获取商品信息的回调
+  void productCallback(ProductResult result) {}
 }

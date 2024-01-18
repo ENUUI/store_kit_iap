@@ -68,13 +68,15 @@ private extension StoreKitIapPlugin {
             result(FlutterError(code: "404", message: "参数错误", details: ""))
             return
         }
-
+        // 使用channel回调结果
+        result(nil)
+        
         transaction.eligibleForIntroOffer(pid) {
             switch $0 {
             case let .success(enable):
-                result(enable)
+                self.eligibleCompleted(["state": true, "offer": enable, "product_id": pid])
             case let .failure(error):
-                result(FlutterError(code: "500", message: "从苹果获取优惠失败", details: error.localizedDescription))
+                self.eligibleCompleted(["state": false, "message": "从苹果获取优惠失败", "details": error.localizedDescription, "product_id": pid])
             }
         }
     }
@@ -90,13 +92,16 @@ private extension StoreKitIapPlugin {
             result(FlutterError(code: "404", message: "参数错误", details: ""))
             return
         }
-
+        
+        // 使用channel回调结果
+        result(nil)
+        
         transaction.getProduct(pid) {
             switch $0 {
             case let .success(data):
-                result(data)
+                self.productCompleted(["state": true, "product": data, "product_id": pid])
             case let .failure(error):
-                result(FlutterError(code: "500", message: "从苹果获取商品失败", details: error.localizedDescription))
+                self.productCompleted(["state": false, "message": "从苹果获取商品失败", "details": error.localizedDescription, "product_id": pid])
             }
         }
     }
@@ -187,6 +192,14 @@ private extension StoreKitIapPlugin {
         invoke(method, arguments: results.map(\.json))
     }
 
+    func eligibleCompleted(_ result: [String: Any]) {
+        invoke("eligible_callback", arguments: result)
+    }
+    
+    func productCompleted(_ result: Any) {
+        invoke("product_callback", arguments: result)
+    }
+    
     func invoke(_ method: String, arguments: Any? = nil) {
         let invokeFn = { self.channel.invokeMethod(method, arguments: arguments) }
 
