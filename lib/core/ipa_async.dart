@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:store_kit_iap/core/model.dart';
+import 'package:store_kit_iap/core/data/model.dart';
 
+import 'data/result.dart';
 import 'iap.dart';
 import 'iap_callback.dart';
 

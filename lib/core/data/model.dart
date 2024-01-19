@@ -39,6 +39,8 @@ extension TransactionStateExt on TransactionState {
   bool get isUnknown => this == TransactionState.unknown;
 }
 
+
+
 @freezed
 class Transaction with _$Transaction {
   const factory Transaction({
@@ -97,30 +99,3 @@ class PurchaseOpt {
   Map<String, dynamic> toJson() => _$PurchaseOptToJson(this);
 }
 
-@freezed
-class EligibleResult with _$EligibleResult {
-  const factory EligibleResult({
-    @Default('') final String requestId, // 是否有资格
-    @Default('') final String productId, // 是否有资格
-    @Default(false) final bool offer, // 是否享受优惠
-    @Default(false) final bool state, // 请求是否成功
-    @Default('') final String message, // 错误信息
-    @Default('') final String details, // 错误详情
-  }) = _EligibleResult;
-
-  factory EligibleResult.fromJson(Map<String, dynamic> json) => _$EligibleResultFromJson(json);
-}
-
-@freezed
-class ProductResult {
-  factory ProductResult({
-    @Default('') final String requestId, // 是否有资格
-    @Default('') final String productId, // 是否有资格
-    @Default(<String, dynamic>{}) final Map<String,dynamic> product, // 是否享受优惠
-    @Default(false) final bool state, // 请求是否成功
-    @Default('') final String message, // 错误信息
-    @Default('') final String details, // 错误详情
-  }) = _ProductResult;
-
-  factory ProductResult.fromJson(Map<String, dynamic> json) => _$ProductResultFromJson(json);
-}

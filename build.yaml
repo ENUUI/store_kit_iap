@@ -5,7 +5,7 @@ targets:
         enabled: true
         generate_for:
           include:
-            - lib/core/model.dart
+            - lib/core/data/*.dart
         options:
           explicit_to_json: true
           generic_argument_factories: true
@@ -15,7 +15,7 @@ targets:
         enabled: true
         generate_for:
           include:
-            - lib/core/model.dart
+            - lib/core/data/*.dart
         options:
           from_json: true
           to_json: true

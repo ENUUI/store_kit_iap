@@ -1,7 +1,8 @@
 import 'package:flutter/services.dart';
 
+import 'data/result.dart';
 import 'iap_callback.dart';
-import 'model.dart';
+import 'data/model.dart';
 
 class StoreKit {
   static const _channel = MethodChannel('cn.banzuoshan/store_kit_iap');

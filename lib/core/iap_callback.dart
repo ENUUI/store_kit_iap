@@ -1,4 +1,5 @@
-import 'model.dart';
+import 'data/model.dart';
+import 'data/result.dart';
 
 /// 回调
 abstract class StoreKitIapCallback {
