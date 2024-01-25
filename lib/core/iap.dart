@@ -122,8 +122,11 @@ extension StoreKitCallback on StoreKit {
     switch (method) {
       case 'purchase_completed':
         assert(arguments is Map);
-        final result = Transaction.fromJson((arguments as Map).cast());
-        callback.purchase(result);
+        final r = Result<Transaction>.fromJson(
+          (arguments as Map).cast(),
+          (j) => Transaction.fromJson(j as Map<String, dynamic>),
+        );
+        callback.purchase(r);
         break;
       case 'updates_callback':
         callback.updates(_fromArguments(arguments));
@@ -137,18 +140,29 @@ extension StoreKitCallback on StoreKit {
       case 'all_callback':
         callback.all(_fromArguments(arguments));
         break;
+      case 'eligible_callback':
+        final r = Result<bool>.fromJson(
+          (arguments as Map).cast(),
+          (j) => j as bool,
+        );
+        callback.eligibleCallback(r);
+        break;
       case 'product_callback':
-        final result = ProductResult.fromJson((arguments as Map).cast());
-        callback.productCallback(result);
+        final r = Result<Map<String, dynamic>>.fromJson(
+          (arguments as Map).cast(),
+          (j) => j as Map<String, dynamic>,
+        );
+        callback.productCallback(r);
       default:
         assert(false, '未知的方法 $method');
         break;
     }
   }
 
-  List<Transaction> _fromArguments(dynamic arguments) {
-    assert(arguments is List);
-    final list = arguments as List;
-    return list.map<Map<String, dynamic>>((e) => (e as Map).cast()).map((e) => Transaction.fromJson(e)).toList();
+  Result<List<Transaction>> _fromArguments(dynamic arguments) {
+    return Result<List<Transaction>>.fromJson(
+      (arguments as Map).cast(),
+      (j) => (j as List).map<Map<String, dynamic>>((e) => (e as Map).cast()).map(Transaction.fromJson).toList(),
+    );
   }
 }

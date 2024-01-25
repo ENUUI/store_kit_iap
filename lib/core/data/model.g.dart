@@ -14,23 +14,41 @@ Map<String, dynamic> _$PurchaseOptToJson(PurchaseOpt instance) =>
       'extra': instance.extra,
     };
 
+_$TransactionListImpl _$$TransactionListImplFromJson(
+        Map<String, dynamic> json) =>
+    _$TransactionListImpl(
+      data: (json['data'] as List<dynamic>?)
+              ?.map((e) => Transaction.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <Transaction>[],
+    );
+
+Map<String, dynamic> _$$TransactionListImplToJson(
+        _$TransactionListImpl instance) =>
+    <String, dynamic>{
+      'data': instance.data?.map((e) => e.toJson()).toList(),
+    };
+
 _$TransactionImpl _$$TransactionImplFromJson(Map<String, dynamic> json) =>
     _$TransactionImpl(
+      id: json['id'] as int? ?? 0,
+      originalId: json['original_id'] as int? ?? 0,
       state: $enumDecodeNullable(_$TransactionStateEnumMap, json['state']) ??
           TransactionState.unknown,
       message: json['message'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      trade: json['trade'] == null
-          ? null
-          : Trade.fromJson(json['trade'] as Map<String, dynamic>),
+      env: $enumDecodeNullable(_$TransactionEnvEnumMap, json['env']) ??
+          TransactionEnv.unknown,
     );
 
 Map<String, dynamic> _$$TransactionImplToJson(_$TransactionImpl instance) =>
     <String, dynamic>{
+      'id': instance.id,
+      'original_id': instance.originalId,
       'state': _$TransactionStateEnumMap[instance.state]!,
       'message': instance.message,
       'description': instance.description,
-      'trade': instance.trade?.toJson(),
+      'env': _$TransactionEnvEnumMap[instance.env]!,
     };
 
 const _$TransactionStateEnumMap = {
@@ -41,23 +59,9 @@ const _$TransactionStateEnumMap = {
   TransactionState.unknown: 'unknown',
 };
 
-_$TradeImpl _$$TradeImplFromJson(Map<String, dynamic> json) => _$TradeImpl(
-      id: json['id'] as int? ?? 0,
-      originalId: json['original_id'] as int? ?? 0,
-      env: $enumDecodeNullable(_$TradeEnvEnumMap, json['env']) ??
-          TradeEnv.unknown,
-    );
-
-Map<String, dynamic> _$$TradeImplToJson(_$TradeImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'original_id': instance.originalId,
-      'env': _$TradeEnvEnumMap[instance.env]!,
-    };
-
-const _$TradeEnvEnumMap = {
-  TradeEnv.sandbox: 'sandbox',
-  TradeEnv.production: 'production',
-  TradeEnv.xcode: 'xcode',
-  TradeEnv.unknown: 'unknown',
+const _$TransactionEnvEnumMap = {
+  TransactionEnv.sandbox: 'sandbox',
+  TransactionEnv.production: 'production',
+  TransactionEnv.xcode: 'xcode',
+  TransactionEnv.unknown: 'unknown',
 };

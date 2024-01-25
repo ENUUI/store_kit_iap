@@ -22,7 +22,6 @@ SkiError _$SkiErrorFromJson(Map<String, dynamic> json) {
 mixin _$SkiError {
   String get message => throw _privateConstructorUsedError;
   String get details => throw _privateConstructorUsedError;
-  String get requestId => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 }
@@ -30,8 +29,7 @@ mixin _$SkiError {
 /// @nodoc
 @JsonSerializable()
 class _$SkiErrorImpl implements _SkiError {
-  const _$SkiErrorImpl(
-      {this.message = '未知错误', this.details = '', this.requestId = ''});
+  const _$SkiErrorImpl({this.message = '未知错误', this.details = ''});
 
   factory _$SkiErrorImpl.fromJson(Map<String, dynamic> json) =>
       _$$SkiErrorImplFromJson(json);
@@ -42,13 +40,10 @@ class _$SkiErrorImpl implements _SkiError {
   @override
   @JsonKey()
   final String details;
-  @override
-  @JsonKey()
-  final String requestId;
 
   @override
   String toString() {
-    return 'SkiError(message: $message, details: $details, requestId: $requestId)';
+    return 'SkiError(message: $message, details: $details)';
   }
 
   @override
@@ -57,14 +52,12 @@ class _$SkiErrorImpl implements _SkiError {
         (other.runtimeType == runtimeType &&
             other is _$SkiErrorImpl &&
             (identical(other.message, message) || other.message == message) &&
-            (identical(other.details, details) || other.details == details) &&
-            (identical(other.requestId, requestId) ||
-                other.requestId == requestId));
+            (identical(other.details, details) || other.details == details));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, message, details, requestId);
+  int get hashCode => Object.hash(runtimeType, message, details);
 
   @override
   Map<String, dynamic> toJson() {
@@ -75,10 +68,8 @@ class _$SkiErrorImpl implements _SkiError {
 }
 
 abstract class _SkiError implements SkiError {
-  const factory _SkiError(
-      {final String message,
-      final String details,
-      final String requestId}) = _$SkiErrorImpl;
+  const factory _SkiError({final String message, final String details}) =
+      _$SkiErrorImpl;
 
   factory _SkiError.fromJson(Map<String, dynamic> json) =
       _$SkiErrorImpl.fromJson;
@@ -87,6 +78,4 @@ abstract class _SkiError implements SkiError {
   String get message;
   @override
   String get details;
-  @override
-  String get requestId;
 }

@@ -1,14 +1,79 @@
 import Foundation
 
 typealias SKIUserInfo = [String: String]
+//
+// enum SKIError: Error {
+//    case arguments(String)
+//    case device
+// }
 
-enum SKIError: Error {
-    case arguments(String)
-    case device
+protocol Req {
+    var requestId: String { get }
 }
 
 enum Opt {
-    struct Purchase {
+    struct CallbackReq: Req {
+        let requestId: String
+
+        init(_ arguments: Any?) throws {
+            guard let arguments else {
+                throw SKIError.arguments("requestId 不能为空")
+            }
+
+            guard let requestId = arguments as? String else {
+                throw SKIError.arguments("参数类型错误")
+            }
+
+            self.requestId = requestId
+        }
+    }
+
+    struct Eligible: Req {
+        let requestId: String
+        let productId: String
+
+        init(_ arguments: Any?) throws {
+            guard let arguments else {
+                throw SKIError.arguments("参数不能为空")
+            }
+
+            guard let parameters = arguments as? [String: Any] else {
+                throw SKIError.arguments("参数类型错误")
+            }
+
+            guard let productId = parameters["product_id"] as? String else {
+                throw SKIError.arguments("product_id不能为空")
+            }
+
+            self.productId = productId
+            requestId = parameters["request_id"] as? String ?? ""
+        }
+    }
+
+    struct ProductInfo: Req {
+        let requestId: String
+        let productId: String
+
+        init(_ arguments: Any?) throws {
+            guard let arguments else {
+                throw SKIError.arguments("参数不能为空")
+            }
+
+            guard let parameters = arguments as? [String: Any] else {
+                throw SKIError.arguments("参数类型错误")
+            }
+
+            guard let productId = parameters["product_id"] as? String else {
+                throw SKIError.arguments("product_id不能为空")
+            }
+
+            self.productId = productId
+            requestId = parameters["request_id"] as? String ?? ""
+        }
+    }
+
+    struct Purchase: Req {
+        let requestId: String
         let productId: String
         let quantity: Int?
         let uuid: String?
@@ -40,6 +105,7 @@ enum Opt {
 
             uuid = parameters["uuid"] as? String
             extra = parameters["extra"] as? SKIUserInfo
+            requestId = parameters["request_id"] as? String ?? ""
         }
     }
 }

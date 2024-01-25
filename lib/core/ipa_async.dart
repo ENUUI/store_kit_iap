@@ -19,37 +19,37 @@ class _StoreKitIapCallback implements StoreKitIapCallback {
   }
 
   @override
-  void all(List<Transaction> transactions) {
+  void all(Result<List<Transaction>> result) {
     // TODO: implement all
   }
 
   @override
-  void current(List<Transaction> transactions) {
+  void current(Result<List<Transaction>> result) {
     // TODO: implement current
   }
 
   @override
-  void purchase(Transaction transaction) {
-    // TODO: implement purchase
-  }
-
-  @override
-  void unfinished(List<Transaction> transactions) {
-    // TODO: implement unfinished
-  }
-
-  @override
-  void updates(List<Transaction> transactions) {
-    // TODO: implement updates
-  }
-
-  @override
-  void eligibleCallback(EligibleResult result) {
+  void eligibleCallback(Result<bool> result) {
     // TODO: implement eligibleCallback
   }
 
   @override
-  void productCallback(ProductResult result) {
+  void productCallback(Result<Map<String, dynamic>> result) {
     // TODO: implement productCallback
+  }
+
+  @override
+  void purchase(Result<Transaction> result) {
+    // TODO: implement purchase
+  }
+
+  @override
+  void unfinished(Result<List<Transaction>> result) {
+    // TODO: implement unfinished
+  }
+
+  @override
+  void updates(Result<List<Transaction>> result) {
+    // TODO: implement updates
   }
 }

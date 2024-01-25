@@ -35,20 +35,16 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
             purchase(call.arguments, result: result)
         case "updates":
             /// 监听是否有交易更新
-            updates()
-            result(nil)
+            updates(call.arguments, result: result)
         case "current":
             // 获取当前可用的交易
-            current()
-            result(nil)
+            current(call.arguments, result: result)
         case "unfinished":
             // 获取当前不可用的交易
-            unfinished()
-            result(nil)
+            unfinished(call.arguments, result: result)
         case "all":
             // 获取所有交易
-            all()
-            result(nil)
+            all(call.arguments, result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -57,51 +53,45 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
 
 /// channel listeners
 private extension StoreKitIapPlugin {
+    func handleError(_ result: @escaping FlutterResult, fn: () throws -> Void) {
+        do {
+            try fn()
+            result(nil)
+        } catch let SKIError.arguments(details) {
+            result(FlutterError(code: "404", message: "参数错误", details: details))
+        } catch {
+            result(FlutterError(code: "500", message: "未知错误", details: error.localizedDescription))
+        }
+    }
+
     /// 是否有资格获得试用优惠
     func eligibleForIntroOffer(_ arguments: Any?, result: @escaping FlutterResult) {
-        guard let arguments else {
-            result(FlutterError(code: "404", message: "参数错误", details: ""))
-            return
-        }
-
-        guard let pid = arguments as? String else {
-            result(FlutterError(code: "404", message: "参数错误", details: ""))
-            return
-        }
-        // 使用channel回调结果
-        result(nil)
-        
-        transaction.eligibleForIntroOffer(pid) {
-            switch $0 {
-            case let .success(enable):
-                self.eligibleCompleted(["state": true, "offer": enable, "product_id": pid])
-            case let .failure(error):
-                self.eligibleCompleted(["state": false, "message": "从苹果获取优惠失败", "details": error.localizedDescription, "product_id": pid])
+        handleError(result) {
+            let opt = try Opt.Eligible(arguments)
+            let pid = opt.productId
+            transaction.eligibleForIntroOffer(pid) {
+                switch $0 {
+                case let .success(enable):
+                    self.eligibleCompleted(["state": true, "offer": enable, "product_id": pid])
+                case let .failure(error):
+                    self.eligibleCompleted(["state": false, "message": "从苹果获取优惠失败", "details": error.localizedDescription, "product_id": pid])
+                }
             }
         }
     }
 
     // 获取商品信息
     func getProduct(_ arguments: Any?, result: @escaping FlutterResult) {
-        guard let arguments else {
-            result(FlutterError(code: "404", message: "参数错误", details: ""))
-            return
-        }
-
-        guard let pid = arguments as? String else {
-            result(FlutterError(code: "404", message: "参数错误", details: ""))
-            return
-        }
-        
-        // 使用channel回调结果
-        result(nil)
-        
-        transaction.getProduct(pid) {
-            switch $0 {
-            case let .success(data):
-                self.productCompleted(["state": true, "product": data, "product_id": pid])
-            case let .failure(error):
-                self.productCompleted(["state": false, "message": "从苹果获取商品失败", "details": error.localizedDescription, "product_id": pid])
+        handleError(result) {
+            let opt = try Opt.ProductInfo(arguments)
+            let pid = opt.productId
+            transaction.getProduct(pid) {
+                switch $0 {
+                case let .success(data):
+                    self.productCompleted(["state": true, "product": data, "product_id": pid])
+                case let .failure(error):
+                    self.productCompleted(["state": false, "message": "从苹果获取商品失败", "details": error.localizedDescription, "product_id": pid])
+                }
             }
         }
     }
@@ -131,75 +121,88 @@ private extension StoreKitIapPlugin {
 
     /// 购买商品
     func purchase(_ arguments: Any?, result: @escaping FlutterResult) {
-        do {
+        handleError(result) {
             let opt = try Opt.Purchase(arguments)
             transaction.purchase(opt) {
                 // flutter与原生通讯有超时限制，而拉起支付弹窗后时间不可控，所以通过channel回调结果。
                 self.purchaseCompleted($0)
             }
-            result(nil)
-        } catch let SKIError.arguments(details) {
-            result(FlutterError(code: "404", message: "参数错误", details: details))
-        } catch {
-            result(FlutterError(code: "500", message: "未知错误", details: ""))
         }
     }
 
     /// 监听是否有交易更新
-    func updates() {
-        transaction.updates { self.updatesCompleted($0) }
+    func updates(_ arguments: Any?, result: @escaping FlutterResult) {
+        handleError(result) {
+            let opt = try Opt.CallbackReq(arguments)
+            transaction.updates { self.updatesCompleted($0) }
+        }
     }
 
     /// 获取当前可用的交易
-    func current() {
-        transaction.current { self.currentCompleted($0) }
+    func current(_ arguments: Any?, result: @escaping FlutterResult) {
+        handleError(result) {
+            let opt = try Opt.CallbackReq(arguments)
+            transaction.current { self.currentCompleted($0) }
+        }
     }
 
     /// 获取当前不可用的交易
-    func unfinished() {
-        transaction.unfinished { self.unfinishedCompleted($0) }
+    func unfinished(_ arguments: Any?, result: @escaping FlutterResult) {
+        handleError(result) {
+            let opt = try Opt.CallbackReq(arguments)
+            transaction.unfinished { self.unfinishedCompleted($0) }
+        }
     }
 
     /// 获取所有交易
-    func all() {
-        transaction.all { self.allCompleted($0) }
+    func all(_ arguments: Any?, result: @escaping FlutterResult) {
+        handleError(result) {
+            let opt = try Opt.CallbackReq(arguments)
+            transaction.all { self.allCompleted($0) }
+        }
     }
 }
 
 /// channel callback
 private extension StoreKitIapPlugin {
-    func purchaseCompleted(_ result: SKITransaction.Result) {
-        invoke("purchase_completed", arguments: result.json)
+    func purchaseCompleted(_ result: SKITransaction.TransactionResult) {
+        switch result {
+        case let .success(data):
+            break
+        case .failure:
+            break
+        }
+//        invoke("purchase_completed", arguments: result.t)
     }
 
-    func updatesCompleted(_ results: [SKITransaction.Result]) {
+    func updatesCompleted(_ results: SKITransaction.TransactionsResult) {
         resultsCompleted("updates_callback", results: results)
     }
 
-    func currentCompleted(_ results: [SKITransaction.Result]) {
+    func currentCompleted(_ results: SKITransaction.TransactionsResult) {
         resultsCompleted("current_callback", results: results)
     }
 
-    func unfinishedCompleted(_ results: [SKITransaction.Result]) {
+    func unfinishedCompleted(_ results: SKITransaction.TransactionsResult) {
         resultsCompleted("unfinished_callback", results: results)
     }
 
-    func allCompleted(_ results: [SKITransaction.Result]) {
+    func allCompleted(_ results: SKITransaction.TransactionsResult) {
         resultsCompleted("all_callback", results: results)
     }
 
-    func resultsCompleted(_ method: String, results: [SKITransaction.Result]) {
-        invoke(method, arguments: results.map(\.json))
+    func resultsCompleted(_: String, results _: SKITransaction.TransactionsResult) {
+//        invoke(method, arguments: results.map(\.json))
     }
 
     func eligibleCompleted(_ result: [String: Any]) {
         invoke("eligible_callback", arguments: result)
     }
-    
+
     func productCompleted(_ result: Any) {
         invoke("product_callback", arguments: result)
     }
-    
+
     func invoke(_ method: String, arguments: Any? = nil) {
         let invokeFn = { self.channel.invokeMethod(method, arguments: arguments) }
 

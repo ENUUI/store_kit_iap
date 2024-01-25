@@ -27,6 +27,17 @@ enum TransactionState {
   unknown,
 }
 
+enum TransactionEnv {
+  @JsonValue('sandbox')
+  sandbox,
+  @JsonValue('production')
+  production,
+  @JsonValue('xcode')
+  xcode,
+  @JsonValue('unknown')
+  unknown,
+}
+
 extension TransactionStateExt on TransactionState {
   bool get isVerified => this == TransactionState.verified;
 
@@ -39,40 +50,27 @@ extension TransactionStateExt on TransactionState {
   bool get isUnknown => this == TransactionState.unknown;
 }
 
+@freezed
+class TransactionList with _$TransactionList {
+  const factory TransactionList({
+    @Default(<Transaction>[]) final List<Transaction>? data,
+  }) = _TransactionList;
 
+  factory TransactionList.fromJson(Map<String, dynamic> json) => _$TransactionListFromJson(json);
+}
 
 @freezed
 class Transaction with _$Transaction {
   const factory Transaction({
+    @Default(0) final int id,
+    @Default(0) final int originalId,
     @Default(TransactionState.unknown) final TransactionState state,
     @Default('') final String message, // 信息
     @Default('') final String description, // 失败时的错误信息
-    final Trade? trade,
+    @Default(TransactionEnv.unknown) final TransactionEnv env, // 生成订单的环境
   }) = _Transaction;
 
   factory Transaction.fromJson(Map<String, dynamic> json) => _$TransactionFromJson(json);
-}
-
-enum TradeEnv {
-  @JsonValue('sandbox')
-  sandbox,
-  @JsonValue('production')
-  production,
-  @JsonValue('xcode')
-  xcode,
-  @JsonValue('unknown')
-  unknown,
-}
-
-@freezed
-class Trade with _$Trade {
-  const factory Trade({
-    @Default(0) final int id,
-    @Default(0) final int originalId,
-    @Default(TradeEnv.unknown) final TradeEnv env,
-  }) = _Trade;
-
-  factory Trade.fromJson(Map<String, dynamic> json) => _$TradeFromJson(json);
 }
 
 @JsonSerializable(createFactory: false, createToJson: true)
@@ -98,4 +96,3 @@ class PurchaseOpt {
 
   Map<String, dynamic> toJson() => _$PurchaseOptToJson(this);
 }
-
