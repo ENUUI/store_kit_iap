@@ -115,7 +115,8 @@ class _Task<T> {
 
   Future<T> get future => _completer.future;
 
-  void error(Object error) => _completer.completeError(error);
+  void error(Object error, StackTrace? stackTrace) =>
+      _completer.completeError(error, stackTrace);
 }
 
 class _StoreKitIapCallback implements StoreKitIapCallback {
