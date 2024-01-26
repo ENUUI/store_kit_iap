@@ -26,7 +26,7 @@ class StoreKitAsync {
     return task.future;
   }
 
-  Future<void> getProduct(String productId) {
+  Future<Object?> getProduct(String productId) {
     final task = _callback.newTask<bool>();
 
     _storeKit
@@ -53,12 +53,12 @@ class StoreKitAsync {
     return task.future;
   }
 
-  /// 当前的权益序列会发出用户拥有权益的每个产品的最新交易，具体包括：
+  /// 当前的权益列表会发出用户拥有权益的每个产品的最新交易，具体包括：
   /// - 每个非消耗性应用内购买的交易
   /// - 每个自动续订订阅的最新交易，其Product.SubscriptionInfo.RenewalState状态为subscribed或inGracePeriod
   /// - 每个非续订订阅的最新交易，包括已完成的订阅
   /// - App Store退款或撤销的产品不会出现在当前的权益中。消耗性应用内购买也不会出现在当前的权益中。
-  /// Important: 要获取未完成的消耗性产品的交易，请使用Transaction中的unfinished或all序列。
+  /// Important: 要获取未完成的消耗性产品的交易，请使用Transaction中的unfinished或all列表。
   Future<List<Transaction>> current({String requestId = ''}) {
     final task = _callback.newTask<List<Transaction>>();
 
@@ -67,7 +67,7 @@ class StoreKitAsync {
     return task.future;
   }
 
-  /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
+  /// 当前的权益列表，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
   /// 它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
   Future<List<Transaction>> updates() {
     final task = _callback.newTask<List<Transaction>>();
@@ -87,7 +87,6 @@ class StoreKitAsync {
   }
 
   /// 所有的交易
-  /// Important: 要获取未完成的消耗性产品的交易，请使用Transaction中的unfinished或all序列。
   Future<List<Transaction>> all() {
     final task = _callback.newTask<List<Transaction>>();
 
