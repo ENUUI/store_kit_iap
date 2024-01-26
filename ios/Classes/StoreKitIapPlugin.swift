@@ -4,7 +4,7 @@ import UIKit
 public class StoreKitIapPlugin: NSObject, FlutterPlugin {
     var channel: FlutterMethodChannel
 
-    lazy var transaction = SKITransaction()
+    lazy var transaction: SKITransaction = SKITransactionImpl()
 
     public init(channel: FlutterMethodChannel) {
         self.channel = channel
@@ -165,7 +165,7 @@ private extension StoreKitIapPlugin {
 
 /// channel callback
 private extension StoreKitIapPlugin {
-    func purchaseCompleted(_ result: SKITransaction.TransactionResult) {
+    func purchaseCompleted(_ result: SKITransactionResult) {
         switch result {
         case let .success(data):
             break
@@ -175,23 +175,23 @@ private extension StoreKitIapPlugin {
 //        invoke("purchase_completed", arguments: result.t)
     }
 
-    func updatesCompleted(_ results: SKITransaction.TransactionsResult) {
+    func updatesCompleted(_ results: SKITransactionsResult) {
         resultsCompleted("updates_callback", results: results)
     }
 
-    func currentCompleted(_ results: SKITransaction.TransactionsResult) {
+    func currentCompleted(_ results: SKITransactionsResult) {
         resultsCompleted("current_callback", results: results)
     }
 
-    func unfinishedCompleted(_ results: SKITransaction.TransactionsResult) {
+    func unfinishedCompleted(_ results: SKITransactionsResult) {
         resultsCompleted("unfinished_callback", results: results)
     }
 
-    func allCompleted(_ results: SKITransaction.TransactionsResult) {
+    func allCompleted(_ results: SKITransactionsResult) {
         resultsCompleted("all_callback", results: results)
     }
 
-    func resultsCompleted(_: String, results _: SKITransaction.TransactionsResult) {
+    func resultsCompleted(_: String, results _: SKITransactionsResult) {
 //        invoke(method, arguments: results.map(\.json))
     }
 

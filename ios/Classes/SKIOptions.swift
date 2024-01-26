@@ -1,11 +1,6 @@
 import Foundation
 
 typealias SKIUserInfo = [String: String]
-//
-// enum SKIError: Error {
-//    case arguments(String)
-//    case device
-// }
 
 protocol Req {
     var requestId: String { get }

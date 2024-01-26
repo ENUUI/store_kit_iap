@@ -29,11 +29,11 @@ extension SKIError: ToMap {
         if let skiError = e as? SKIError {
             return skiError.toMap()
         }
-        
+
         var code = 400
         var message = ""
         var detail: String = e.localizedDescription
-    
+
         if let skError = e as? StoreKitError {
             switch skError {
             case .unknown:

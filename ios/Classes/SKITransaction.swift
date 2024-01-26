@@ -3,33 +3,43 @@ import Dispatch
 import Foundation
 import StoreKit
 
+typealias SKITransactionsResult = Swift.Result<D.TransactionList, SKIError>
+typealias SKITransactionResult = Swift.Result<D.Transaction, SKIError>
+
+protocol SKITransaction {
+    /// 获取vendor id
+    func deviceVerificationID() -> String?
+    /// 是否有资格获得试用优惠
+    func eligibleForIntroOffer(_ pid: String, result: @escaping (Swift.Result<Bool, SKIError>) -> Void)
+    /// 获取商品数据
+    func getProduct(_ pid: String, result: @escaping (Swift.Result<Any, SKIError>) -> Void)
+    /// 支付商品
+    func purchase(_ p: Opt.Purchase, result: @escaping (SKITransactionResult) -> Void)
+
+    /// 未处理的交易
+    func unfinished(result: @escaping (SKITransactionsResult) -> Void)
+    /// 当前的权益序列
+    /// As mentioned before, this only works on release mode and doesn't work on debug mode without StoreKit Testing, that is without a Configuration.storekit.
+    /// https://stackoverflow.com/questions/69768519/appstore-sync-not-restoring-purchases
+    func current(result: @escaping (SKITransactionsResult) -> Void)
+    /// 获取有更新的交易
+    func updates(result: @escaping (SKITransactionsResult) -> Void)
+    /// 所有交易
+    func all(result: @escaping (SKITransactionsResult) -> Void)
+
+    /// 结束交易
+    func finish(_ id: UInt64) -> Bool
+}
+
 /// 交易
-class SKITransaction {
-    typealias TransactionsResult = Swift.Result<D.TransactionList, SKIError>
-    typealias TransactionResult = Swift.Result<D.Transaction, SKIError>
+class SKITransactionImpl: SKITransaction {
     init() {}
 
     private var transactionCaches: [UInt64: Transaction] = [:]
     private var semaphore = DispatchSemaphore(value: 1)
 }
 
-private extension SKITransaction {
-    func insert(_ transaction: Transaction) {
-        semaphore.wait()
-        defer { semaphore.signal() }
-
-        transactionCaches[transaction.id] = transaction
-    }
-
-    func find(_ id: UInt64) -> Transaction? {
-        semaphore.wait()
-        defer { semaphore.signal() }
-
-        return transactionCaches.removeValue(forKey: id)
-    }
-}
-
-extension SKITransaction {
+extension SKITransactionImpl {
     /// 获取vendor id
     func deviceVerificationID() -> String? {
         AppStore.deviceVerificationID?.uuidString
@@ -37,9 +47,9 @@ extension SKITransaction {
 
     /// 是否有资格获得试用优惠
     func eligibleForIntroOffer(_ pid: String, result: @escaping (Swift.Result<Bool, SKIError>) -> Void) {
-        Task {
+        Task.detached {
             do {
-                let enable = try await eligibleForIntroOffer(pid)
+                let enable = try await self.eligibleForIntroOffer(pid)
                 result(.success(enable))
             } catch {
                 result(.failure(.other(error)))
@@ -49,9 +59,9 @@ extension SKITransaction {
 
     /// 获取商品数据
     func getProduct(_ pid: String, result: @escaping (Swift.Result<Any, SKIError>) -> Void) {
-        Task {
+        Task.detached {
             do {
-                let product = try await product(pid)
+                let product = try await self.product(pid)
                 let jsonObj = try JSONSerialization.jsonObject(with: product.jsonRepresentation)
                 result(.success(jsonObj))
             } catch {
@@ -61,10 +71,10 @@ extension SKITransaction {
     }
 
     /// 支付商品
-    func purchase(_ p: Opt.Purchase, result: @escaping (TransactionResult) -> Void) {
-        Task {
+    func purchase(_ p: Opt.Purchase, result: @escaping (SKITransactionResult) -> Void) {
+        Task.detached {
             do {
-                try await result(.success(purchase(p)))
+                try await result(.success(self.purchase(p)))
             } catch {
                 result(.failure(.other(error)))
             }
@@ -72,20 +82,20 @@ extension SKITransaction {
     }
 
     /// 未处理的交易
-    func unfinished(result: @escaping (TransactionsResult) -> Void) {
-        Task {
-            await result(.success(unfinished()))
+    func unfinished(result: @escaping (SKITransactionsResult) -> Void) {
+        Task.detached {
+            await result(.success(self.unfinished()))
         }
     }
 
     /// 当前的权益序列
     /// As mentioned before, this only works on release mode and doesn't work on debug mode without StoreKit Testing, that is without a Configuration.storekit.
     /// https://stackoverflow.com/questions/69768519/appstore-sync-not-restoring-purchases
-    func current(result: @escaping (TransactionsResult) -> Void) {
-        Task {
+    func current(result: @escaping (SKITransactionsResult) -> Void) {
+        Task.detached {
             do {
                 try await AppStore.sync()
-                await result(.success(current()))
+                await result(.success(self.current()))
             } catch {
                 result(.failure(.other(error)))
             }
@@ -93,32 +103,32 @@ extension SKITransaction {
     }
 
     /// 当前的权益序列
-    func updates(result: @escaping (TransactionsResult) -> Void) {
-        Task {
-            await result(.success(updates()))
+    func updates(result: @escaping (SKITransactionsResult) -> Void) {
+        Task.detached {
+            await result(.success(self.updates()))
         }
     }
 
     /// 所有交易
-    func all(result: @escaping (TransactionsResult) -> Void) {
-        Task {
-            await result(.success(all()))
+    func all(result: @escaping (SKITransactionsResult) -> Void) {
+        Task.detached {
+            await result(.success(self.all()))
         }
     }
 }
 
-extension SKITransaction {
+extension SKITransactionImpl {
     /// 支付商品
     func purchase(_ p: Opt.Purchase) async throws -> D.Transaction {
         let product = try await product(p.productId)
 
         let result = try await product.purchase(options: p.option())
 
-        return purchaseResult(result)
+        return try purchaseResult(result)
     }
 }
 
-extension SKITransaction {
+extension SKITransactionImpl {
     func finish(_ id: UInt64) -> Bool {
         guard let transaction = find(id) else {
             return false
@@ -157,7 +167,21 @@ extension SKITransaction {
     }
 }
 
-private extension SKITransaction {
+private extension SKITransactionImpl {
+    func insert(_ transaction: Transaction) {
+        semaphore.wait()
+        defer { semaphore.signal() }
+
+        transactionCaches[transaction.id] = transaction
+    }
+
+    func find(_ id: UInt64) -> Transaction? {
+        semaphore.wait()
+        defer { semaphore.signal() }
+
+        return transactionCaches.removeValue(forKey: id)
+    }
+
     func iterator(_ transactions: Transaction.Transactions) async -> [D.Transaction] {
         var results: D.TransactionList = []
         for await result in transactions {
@@ -168,7 +192,7 @@ private extension SKITransaction {
     }
 }
 
-private extension SKITransaction {
+private extension SKITransactionImpl {
     // 有资格获得试用优惠
     func eligibleForIntroOffer(_ productId: String) async throws -> Bool {
         let product = try await product(productId)
@@ -193,21 +217,18 @@ private extension SKITransaction {
     }
 }
 
-private extension SKITransaction {
+private extension SKITransactionImpl {
     /// 处理支付结果
-    func purchaseResult(_ result: Product.PurchaseResult) -> D.Transaction {
+    func purchaseResult(_ result: Product.PurchaseResult) throws -> D.Transaction {
         switch result {
         case let .success(verification):
             return verificationResult(verification)
         case .userCancelled:
-            print("StoreKitIap purchase result: userCancelled")
-            return D.Transaction(state: .cancelled, message: "用户取消")
+            throw SKIError.cancelled("用户取消")
         case .pending:
-            print("StoreKitIap purchase result: pending")
-            return D.Transaction(state: .pending, message: "等待执行")
+            throw SKIError.pending
         @unknown default:
-            print("StoreKitIap purchase result: unknown")
-            return D.Transaction(state: .unknown, message: "未知错误")
+            throw SKIError.unknown
         }
     }
 

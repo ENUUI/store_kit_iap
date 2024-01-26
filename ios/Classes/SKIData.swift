@@ -15,19 +15,14 @@ enum D {
             ///  - 拉起支付失败
             ///  - 支付失败
             case unverified
-            /// 用户取消了
-            case cancelled
-            /// 待处理
-            case pending
-            case unknown
         }
 
-        let id: UInt64 // Transaction.Id, 当 verified 或者 unverified 时有效
-        let originalID: UInt64 // Transaction.originalID, 当 verified 或者 unverified 时有效
+        let id: UInt64 // Transaction.Id
+        let originalID: UInt64 // Transaction.originalID
         let state: State // 状态
         let message: String // 错误信息
         let details: String // 错误信息详情
-        let env: String // 订单生产当环境, 当 verified 或者 unverified 时有效
+        let env: String // 订单生产当环境
 
         init(id: UInt64 = 0, originalID: UInt64 = 0, state: State, message: String, details: String = "", env: String = "") {
             self.id = id
