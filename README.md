@@ -31,7 +31,7 @@ StoreKitIap 是一个用于在 Flutter 应用中集成苹果 StoreKit 2 的插�
 1. 在您的 Dart 代码文件中导入 StoreKitIap：
 
    ```dart
-   import 'package:storekit_iap/storekit_iap.dart';
+   import 'package:store_kit_iap/store_kit_iap.dart';
    ```
 2. 使用 StoreKitIap 进行应用内购买和订阅交易：
 
