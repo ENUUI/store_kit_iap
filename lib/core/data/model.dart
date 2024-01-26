@@ -16,14 +16,6 @@ enum TransactionState {
   @JsonValue('unverified')
   unverified,
 
-  /// 用户取消了
-  @JsonValue('cancelled')
-  cancelled,
-
-  /// 待处理
-  @JsonValue('pending')
-  pending,
-  @JsonValue('unknown')
   unknown,
 }
 
@@ -42,12 +34,6 @@ extension TransactionStateExt on TransactionState {
   bool get isVerified => this == TransactionState.verified;
 
   bool get isUnverified => this == TransactionState.unverified;
-
-  bool get isCancelled => this == TransactionState.cancelled;
-
-  bool get isPending => this == TransactionState.pending;
-
-  bool get isUnknown => this == TransactionState.unknown;
 }
 
 @freezed
@@ -64,6 +50,7 @@ class Transaction with _$Transaction {
   const factory Transaction({
     @Default(0) final int id,
     @Default(0) final int originalId,
+    @Default('') final String productId, // 信息
     @Default(TransactionState.unknown) final TransactionState state,
     @Default('') final String message, // 信息
     @Default('') final String description, // 失败时的错误信息

@@ -20,6 +20,7 @@ SkiError _$SkiErrorFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$SkiError {
+  int get code => throw _privateConstructorUsedError;
   String get message => throw _privateConstructorUsedError;
   String get details => throw _privateConstructorUsedError;
 
@@ -29,11 +30,15 @@ mixin _$SkiError {
 /// @nodoc
 @JsonSerializable()
 class _$SkiErrorImpl implements _SkiError {
-  const _$SkiErrorImpl({this.message = '未知错误', this.details = ''});
+  const _$SkiErrorImpl(
+      {this.code = 0, this.message = '未知错误', this.details = ''});
 
   factory _$SkiErrorImpl.fromJson(Map<String, dynamic> json) =>
       _$$SkiErrorImplFromJson(json);
 
+  @override
+  @JsonKey()
+  final int code;
   @override
   @JsonKey()
   final String message;
@@ -43,7 +48,7 @@ class _$SkiErrorImpl implements _SkiError {
 
   @override
   String toString() {
-    return 'SkiError(message: $message, details: $details)';
+    return 'SkiError(code: $code, message: $message, details: $details)';
   }
 
   @override
@@ -51,13 +56,14 @@ class _$SkiErrorImpl implements _SkiError {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$SkiErrorImpl &&
+            (identical(other.code, code) || other.code == code) &&
             (identical(other.message, message) || other.message == message) &&
             (identical(other.details, details) || other.details == details));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, message, details);
+  int get hashCode => Object.hash(runtimeType, code, message, details);
 
   @override
   Map<String, dynamic> toJson() {
@@ -68,12 +74,16 @@ class _$SkiErrorImpl implements _SkiError {
 }
 
 abstract class _SkiError implements SkiError {
-  const factory _SkiError({final String message, final String details}) =
-      _$SkiErrorImpl;
+  const factory _SkiError(
+      {final int code,
+      final String message,
+      final String details}) = _$SkiErrorImpl;
 
   factory _SkiError.fromJson(Map<String, dynamic> json) =
       _$SkiErrorImpl.fromJson;
 
+  @override
+  int get code;
   @override
   String get message;
   @override

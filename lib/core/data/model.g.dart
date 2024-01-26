@@ -33,6 +33,7 @@ _$TransactionImpl _$$TransactionImplFromJson(Map<String, dynamic> json) =>
     _$TransactionImpl(
       id: json['id'] as int? ?? 0,
       originalId: json['original_id'] as int? ?? 0,
+      productId: json['product_id'] as String? ?? '',
       state: $enumDecodeNullable(_$TransactionStateEnumMap, json['state']) ??
           TransactionState.unknown,
       message: json['message'] as String? ?? '',
@@ -45,6 +46,7 @@ Map<String, dynamic> _$$TransactionImplToJson(_$TransactionImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'original_id': instance.originalId,
+      'product_id': instance.productId,
       'state': _$TransactionStateEnumMap[instance.state]!,
       'message': instance.message,
       'description': instance.description,
@@ -54,8 +56,6 @@ Map<String, dynamic> _$$TransactionImplToJson(_$TransactionImpl instance) =>
 const _$TransactionStateEnumMap = {
   TransactionState.verified: 'verified',
   TransactionState.unverified: 'unverified',
-  TransactionState.cancelled: 'cancelled',
-  TransactionState.pending: 'pending',
   TransactionState.unknown: 'unknown',
 };
 

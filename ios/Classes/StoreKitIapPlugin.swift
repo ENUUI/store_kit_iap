@@ -21,7 +21,7 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
     }
 
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "cn.banzuoshan/store_kit_iap", binaryMessenger: registrar.messenger())
+        let channel = FlutterMethodChannel(name: "enuui.packages/store_kit_iap", binaryMessenger: registrar.messenger())
         let instance = StoreKitIapPlugin(channel: channel)
         registrar.addMethodCallDelegate(instance, channel: channel)
     }

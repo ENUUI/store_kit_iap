@@ -5,7 +5,7 @@ import 'iap_callback.dart';
 import 'data/model.dart';
 
 class StoreKit {
-  static const _channel = MethodChannel('cn.banzuoshan/store_kit_iap');
+  static const _channel = MethodChannel('enuui.packages/store_kit_iap');
   StoreKitIapCallback? _callback;
 
   StoreKit() {

@@ -91,6 +91,7 @@ Transaction _$TransactionFromJson(Map<String, dynamic> json) {
 mixin _$Transaction {
   int get id => throw _privateConstructorUsedError;
   int get originalId => throw _privateConstructorUsedError;
+  String get productId => throw _privateConstructorUsedError; // 信息
   TransactionState get state => throw _privateConstructorUsedError;
   String get message => throw _privateConstructorUsedError; // 信息
   String get description => throw _privateConstructorUsedError; // 失败时的错误信息
@@ -105,6 +106,7 @@ class _$TransactionImpl implements _Transaction {
   const _$TransactionImpl(
       {this.id = 0,
       this.originalId = 0,
+      this.productId = '',
       this.state = TransactionState.unknown,
       this.message = '',
       this.description = '',
@@ -119,6 +121,10 @@ class _$TransactionImpl implements _Transaction {
   @override
   @JsonKey()
   final int originalId;
+  @override
+  @JsonKey()
+  final String productId;
+// 信息
   @override
   @JsonKey()
   final TransactionState state;
@@ -136,7 +142,7 @@ class _$TransactionImpl implements _Transaction {
 
   @override
   String toString() {
-    return 'Transaction(id: $id, originalId: $originalId, state: $state, message: $message, description: $description, env: $env)';
+    return 'Transaction(id: $id, originalId: $originalId, productId: $productId, state: $state, message: $message, description: $description, env: $env)';
   }
 
   @override
@@ -147,6 +153,8 @@ class _$TransactionImpl implements _Transaction {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.originalId, originalId) ||
                 other.originalId == originalId) &&
+            (identical(other.productId, productId) ||
+                other.productId == productId) &&
             (identical(other.state, state) || other.state == state) &&
             (identical(other.message, message) || other.message == message) &&
             (identical(other.description, description) ||
@@ -157,7 +165,7 @@ class _$TransactionImpl implements _Transaction {
   @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
-      runtimeType, id, originalId, state, message, description, env);
+      runtimeType, id, originalId, productId, state, message, description, env);
 
   @override
   Map<String, dynamic> toJson() {
@@ -171,6 +179,7 @@ abstract class _Transaction implements Transaction {
   const factory _Transaction(
       {final int id,
       final int originalId,
+      final String productId,
       final TransactionState state,
       final String message,
       final String description,
@@ -184,6 +193,8 @@ abstract class _Transaction implements Transaction {
   @override
   int get originalId;
   @override
+  String get productId;
+  @override // 信息
   TransactionState get state;
   @override
   String get message;

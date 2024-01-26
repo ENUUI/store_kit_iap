@@ -40,6 +40,7 @@ extension SKIError: ToMap {
                 message = "未知错误"
                 code = 500
             case .userCancelled:
+                code = 499
                 message = "用户取消"
             case let .networkError(err):
                 message = "网络错误"
