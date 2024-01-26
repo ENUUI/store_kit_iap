@@ -1,5 +1,8 @@
 import Foundation
 
+typealias SKITransactionsResult = Swift.Result<D.TransactionList, SKIError>
+typealias SKITransactionResult = Swift.Result<D.Transaction, SKIError>
+
 protocol ToMap {
     func toMap() -> [String: Any?]
 }
@@ -19,44 +22,25 @@ enum D {
 
         let id: UInt64 // Transaction.Id
         let originalID: UInt64 // Transaction.originalID
+        let productId: String
         let state: State // 状态
         let message: String // 错误信息
         let details: String // 错误信息详情
         let env: String // 订单生产当环境
-
-        init(id: UInt64 = 0, originalID: UInt64 = 0, state: State, message: String, details: String = "", env: String = "") {
-            self.id = id
-            self.originalID = originalID
-            self.state = state
-            self.message = message
-            self.details = details
-            self.env = env
-        }
     }
 }
 
 extension D.Transaction: ToMap {
     func toMap() -> [String: Any?] {
-        ["state": state, "message": message, "details": details, "id": id, "original_id": originalID, "env": env]
+        ["id": id, "original_id": originalID, "product_id": productId, "state": state, "message": message, "details": details, "env": env]
     }
 }
 
 /// 通过channel返回给flutter端的结果
 struct R<T> {
-    struct Err {
-        let message: String
-        let details: String
-    }
-
     let requestId: String
     let data: T?
-    let error: Err?
-}
-
-extension R.Err: ToMap {
-    func toMap() -> [String: Any?] {
-        ["message": message, "details": details]
-    }
+    let error: SKIError?
 }
 
 extension R: ToMap {
@@ -68,5 +52,49 @@ extension R: ToMap {
         }
 
         return ["request_id": requestId, "error": error?.toMap(), "data": dataToMap]
+    }
+}
+
+extension SKITransactionsResult {
+    func toR(requestId: String) -> R<D.TransactionList> {
+        switch self {
+        case let .success(transactions):
+            R(requestId: requestId, data: transactions, error: nil)
+        case let .failure(error):
+            R(requestId: requestId, data: nil, error: error)
+        }
+    }
+}
+
+extension SKITransactionResult {
+    func toR(requestId: String) -> R<D.Transaction> {
+        switch self {
+        case let .success(transaction):
+            R(requestId: requestId, data: transaction, error: nil)
+        case let .failure(error):
+            R(requestId: requestId, data: nil, error: error)
+        }
+    }
+}
+
+extension Swift.Result<Bool, SKIError> {
+    func toR(requestId: String) -> R<Bool> {
+        switch self {
+        case let .success(enable):
+            R(requestId: requestId, data: enable, error: nil)
+        case let .failure(error):
+            R(requestId: requestId, data: nil, error: error)
+        }
+    }
+}
+
+extension Swift.Result<Any, SKIError> {
+    func toR(requestId: String) -> R<Any> {
+        switch self {
+        case let .success(product):
+            R(requestId: requestId, data: product, error: nil)
+        case let .failure(error):
+            R(requestId: requestId, data: nil, error: error)
+        }
     }
 }

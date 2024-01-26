@@ -2,6 +2,16 @@ import Flutter
 import UIKit
 
 public class StoreKitIapPlugin: NSObject, FlutterPlugin {
+    enum CallbackMethod: String {
+        case eligibleForIntroOffer = "eligible_callback"
+        case getProduct = "product_callback"
+        case purchase = "purchase_callback"
+        case updates = "updates_callback"
+        case current = "current_callback"
+        case unfinished = "unfinished_callback"
+        case all = "all_callback"
+    }
+
     var channel: FlutterMethodChannel
 
     lazy var transaction: SKITransaction = SKITransactionImpl()
@@ -69,13 +79,8 @@ private extension StoreKitIapPlugin {
         handleError(result) {
             let opt = try Opt.Eligible(arguments)
             let pid = opt.productId
-            transaction.eligibleForIntroOffer(pid) {
-                switch $0 {
-                case let .success(enable):
-                    self.eligibleCompleted(["state": true, "offer": enable, "product_id": pid])
-                case let .failure(error):
-                    self.eligibleCompleted(["state": false, "message": "从苹果获取优惠失败", "details": error.localizedDescription, "product_id": pid])
-                }
+            transaction.eligibleForIntroOffer(pid) { r in
+                self.invoke(.eligibleForIntroOffer, arguments: r.toR(requestId: opt.requestId))
             }
         }
     }
@@ -86,12 +91,7 @@ private extension StoreKitIapPlugin {
             let opt = try Opt.ProductInfo(arguments)
             let pid = opt.productId
             transaction.getProduct(pid) {
-                switch $0 {
-                case let .success(data):
-                    self.productCompleted(["state": true, "product": data, "product_id": pid])
-                case let .failure(error):
-                    self.productCompleted(["state": false, "message": "从苹果获取商品失败", "details": error.localizedDescription, "product_id": pid])
-                }
+                self.invoke(.getProduct, arguments: $0.toR(requestId: opt.requestId))
             }
         }
     }
@@ -124,8 +124,7 @@ private extension StoreKitIapPlugin {
         handleError(result) {
             let opt = try Opt.Purchase(arguments)
             transaction.purchase(opt) {
-                // flutter与原生通讯有超时限制，而拉起支付弹窗后时间不可控，所以通过channel回调结果。
-                self.purchaseCompleted($0)
+                self.invoke(.purchase, arguments: $0.toR(requestId: opt.requestId))
             }
         }
     }
@@ -134,7 +133,9 @@ private extension StoreKitIapPlugin {
     func updates(_ arguments: Any?, result: @escaping FlutterResult) {
         handleError(result) {
             let opt = try Opt.CallbackReq(arguments)
-            transaction.updates { self.updatesCompleted($0) }
+            transaction.updates {
+                self.invoke(.updates, arguments: $0.toR(requestId: opt.requestId))
+            }
         }
     }
 
@@ -142,15 +143,19 @@ private extension StoreKitIapPlugin {
     func current(_ arguments: Any?, result: @escaping FlutterResult) {
         handleError(result) {
             let opt = try Opt.CallbackReq(arguments)
-            transaction.current { self.currentCompleted($0) }
+            transaction.current {
+                self.invoke(.current, arguments: $0.toR(requestId: opt.requestId))
+            }
         }
     }
 
-    /// 获取当前不可用的交易
+    /// 未处理的交易
     func unfinished(_ arguments: Any?, result: @escaping FlutterResult) {
         handleError(result) {
             let opt = try Opt.CallbackReq(arguments)
-            transaction.unfinished { self.unfinishedCompleted($0) }
+            transaction.unfinished {
+                self.invoke(.unfinished, arguments: $0.toR(requestId: opt.requestId))
+            }
         }
     }
 
@@ -158,53 +163,17 @@ private extension StoreKitIapPlugin {
     func all(_ arguments: Any?, result: @escaping FlutterResult) {
         handleError(result) {
             let opt = try Opt.CallbackReq(arguments)
-            transaction.all { self.allCompleted($0) }
+            transaction.all {
+                self.invoke(.all, arguments: $0.toR(requestId: opt.requestId))
+            }
         }
     }
 }
 
 /// channel callback
 private extension StoreKitIapPlugin {
-    func purchaseCompleted(_ result: SKITransactionResult) {
-        switch result {
-        case let .success(data):
-            break
-        case .failure:
-            break
-        }
-//        invoke("purchase_completed", arguments: result.t)
-    }
-
-    func updatesCompleted(_ results: SKITransactionsResult) {
-        resultsCompleted("updates_callback", results: results)
-    }
-
-    func currentCompleted(_ results: SKITransactionsResult) {
-        resultsCompleted("current_callback", results: results)
-    }
-
-    func unfinishedCompleted(_ results: SKITransactionsResult) {
-        resultsCompleted("unfinished_callback", results: results)
-    }
-
-    func allCompleted(_ results: SKITransactionsResult) {
-        resultsCompleted("all_callback", results: results)
-    }
-
-    func resultsCompleted(_: String, results _: SKITransactionsResult) {
-//        invoke(method, arguments: results.map(\.json))
-    }
-
-    func eligibleCompleted(_ result: [String: Any]) {
-        invoke("eligible_callback", arguments: result)
-    }
-
-    func productCompleted(_ result: Any) {
-        invoke("product_callback", arguments: result)
-    }
-
-    func invoke(_ method: String, arguments: Any? = nil) {
-        let invokeFn = { self.channel.invokeMethod(method, arguments: arguments) }
+    func invoke(_ method: CallbackMethod, arguments: R<some Any>? = nil) {
+        let invokeFn = { self.channel.invokeMethod(method.rawValue, arguments: arguments) }
 
         if Thread.current.isMainThread {
             invokeFn()

@@ -3,9 +3,6 @@ import Dispatch
 import Foundation
 import StoreKit
 
-typealias SKITransactionsResult = Swift.Result<D.TransactionList, SKIError>
-typealias SKITransactionResult = Swift.Result<D.Transaction, SKIError>
-
 protocol SKITransaction {
     /// 获取vendor id
     func deviceVerificationID() -> String?
@@ -237,13 +234,13 @@ private extension SKITransactionImpl {
         switch result {
         case let .unverified(transaction, error):
             // TODO: 如何处理 unverified 时的 transaction
-            return D.Transaction(id: transaction.id, originalID: transaction.originalID, state: .unverified, message: "支付失败", details: error.localizedDescription, env: transaction.envString())
+            return transaction.toDTransaction(.unverified, message: "支付失败", details: error.localizedDescription)
         case let .verified(transaction):
             guard transactionOfDevice(transaction) else {
-                return D.Transaction(id: transaction.id, originalID: transaction.originalID, state: .unverified, message: "交易不属于本设备", env: transaction.envString())
+                return transaction.toDTransaction(.unverified, message: "交易不属于本设备")
             }
             insert(transaction)
-            return D.Transaction(id: transaction.id, originalID: transaction.originalID, state: .verified, message: "支付成功", env: transaction.envString())
+            return transaction.toDTransaction(.verified)
         }
     }
 
@@ -299,5 +296,9 @@ extension StoreKit.Transaction {
         }
 
         return env
+    }
+
+    func toDTransaction(_ state: D.Transaction.State, message: String = "", details: String = "") -> D.Transaction {
+        D.Transaction(id: id, originalID: originalID, productId: productID, state: state, message: message, details: details, env: envString())
     }
 }
