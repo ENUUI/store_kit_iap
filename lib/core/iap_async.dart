@@ -129,44 +129,44 @@ class _StoreKitIapCallback implements StoreKitIapCallback {
     return task;
   }
 
-  void notify<T>(Result<T> r) {
-    final completer = _callbacks.remove(r.requestId);
-    if (completer == null) return;
-    completer.complete(r);
+  void complete<T>(Result<T> r) {
+    final task = _callbacks.remove(r.requestId);
+    if (task == null) return;
+    task.complete(r);
   }
 
   @override
   void all(Result<List<Transaction>> result) {
-    notify(result);
+    complete(result);
   }
 
   @override
   void current(Result<List<Transaction>> result) {
-    notify(result);
+    complete(result);
   }
 
   @override
   void eligibleCallback(Result<bool> result) {
-    notify(result);
+    complete(result);
   }
 
   @override
   void productCallback(Result<Map<String, dynamic>> result) {
-    notify(result);
+    complete(result);
   }
 
   @override
   void purchase(Result<Transaction> result) {
-    notify(result);
+    complete(result);
   }
 
   @override
   void unfinished(Result<List<Transaction>> result) {
-    notify(result);
+    complete(result);
   }
 
   @override
   void updates(Result<List<Transaction>> result) {
-    notify(result);
+    complete(result);
   }
 }
