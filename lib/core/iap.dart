@@ -119,37 +119,39 @@ extension StoreKitCallback on StoreKit {
       assert(false, '未添加监听器');
       return;
     }
+
+    final data = _castArguments(arguments);
+
     switch (method) {
-      case 'purchase_completed':
-        assert(arguments is Map);
+      case 'purchase_callback':
         final r = Result<Transaction>.fromJson(
-          (arguments as Map).cast(),
+          data as Map<String, dynamic>,
           (j) => Transaction.fromJson(j as Map<String, dynamic>),
         );
         callback.purchase(r);
         break;
       case 'updates_callback':
-        callback.updates(_fromArguments(arguments));
+        callback.updates(_fromData(data));
         break;
       case 'current_callback':
-        callback.current(_fromArguments(arguments));
+        callback.current(_fromData(data));
         break;
       case 'unfinished_callback':
-        callback.unfinished(_fromArguments(arguments));
+        callback.unfinished(_fromData(data));
         break;
       case 'all_callback':
-        callback.all(_fromArguments(arguments));
+        callback.all(_fromData(data));
         break;
       case 'eligible_callback':
         final r = Result<bool>.fromJson(
-          (arguments as Map).cast(),
+          data as Map<String, dynamic>,
           (j) => j as bool,
         );
         callback.eligibleCallback(r);
         break;
       case 'product_callback':
         final r = Result<Map<String, dynamic>>.fromJson(
-          (arguments as Map).cast(),
+          data as Map<String, dynamic>,
           (j) => j as Map<String, dynamic>,
         );
         callback.productCallback(r);
@@ -159,10 +161,22 @@ extension StoreKitCallback on StoreKit {
     }
   }
 
-  Result<List<Transaction>> _fromArguments(dynamic arguments) {
+  Result<List<Transaction>> _fromData(dynamic data) {
     return Result<List<Transaction>>.fromJson(
-      (arguments as Map).cast(),
-      (j) => (j as List).map<Map<String, dynamic>>((e) => (e as Map).cast()).map(Transaction.fromJson).toList(),
+      data as Map<String, dynamic>,
+      (j) => (j as List).map((e) => Transaction.fromJson(e as Map<String, dynamic>)).toList(),
     );
+  }
+
+  Object? _castArguments(dynamic arguments) {
+    if (arguments is List) {
+      return arguments.map((e) => _castArguments(e)).toList();
+    }
+
+    if (arguments is Map) {
+      return arguments.map((key, value) => MapEntry(key as String, _castArguments(value)));
+    }
+
+    return arguments;
   }
 }

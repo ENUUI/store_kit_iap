@@ -32,7 +32,7 @@ enum D {
 
 extension D.Transaction: ToMap {
     func toMap() -> [String: Any?] {
-        ["id": id, "original_id": originalID, "product_id": productId, "state": state, "message": message, "details": details, "env": env]
+        ["id": id, "original_id": originalID, "product_id": productId, "state": state.rawValue, "message": message, "details": details, "env": env]
     }
 }
 
@@ -47,6 +47,8 @@ extension R: ToMap {
     func toMap() -> [String: Any?] {
         let dataToMap: Any? = if data is ToMap {
             (data as! ToMap).toMap()
+        } else if data is D.TransactionList {
+            (data as! D.TransactionList).map { $0.toMap() }
         } else {
             data
         }

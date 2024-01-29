@@ -173,7 +173,7 @@ private extension StoreKitIapPlugin {
 /// channel callback
 private extension StoreKitIapPlugin {
     func invoke(_ method: CallbackMethod, arguments: R<some Any>? = nil) {
-        let invokeFn = { self.channel.invokeMethod(method.rawValue, arguments: arguments) }
+        let invokeFn = { self.channel.invokeMethod(method.rawValue, arguments: arguments?.toMap()) }
 
         if Thread.current.isMainThread {
             invokeFn()
