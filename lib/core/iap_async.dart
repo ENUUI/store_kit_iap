@@ -104,7 +104,7 @@ class _Task<T> {
     if (_completer.isCompleted) return;
 
     if (result.error != null) {
-      _completer.completeError(result.error!);
+      _completer.completeError(result.error!, StackTrace.current);
     } else {
       _completer.complete(result.data);
     }
