@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 
+import 'data/error.dart';
 import 'data/result.dart';
 import 'iap_callback.dart';
 import 'data/model.dart';
@@ -15,10 +16,10 @@ class StoreKit {
   /// 是否有资格获得试用优惠
   Future<void> eligibleForIntroOffer(String productId, {String requestId = ''}) async {
     if (productId.isEmpty) {
-      throw ArgumentError.value(
-        productId,
-        'productId不能为空',
-        'productId is empty',
+      throw const SkiError(
+        code: 400,
+        message: 'productId不能为空',
+        details: 'productId is empty',
       );
     }
     await _channel.invokeMethod('eligible_for_intro_offer', {'product_id': productId, 'request_id': requestId});
@@ -26,10 +27,10 @@ class StoreKit {
 
   Future<void> getProduct(String productId, {String requestId = ''}) async {
     if (productId.isEmpty) {
-      throw ArgumentError.value(
-        productId,
-        'productId不能为空',
-        'productId is empty',
+      throw const SkiError(
+        code: 400,
+        message: 'productId不能为空',
+        details: 'productId is empty',
       );
     }
     await _channel.invokeMethod('get_product', {'product_id': productId, 'request_id': requestId});
@@ -48,17 +49,17 @@ class StoreKit {
   /// 支付
   Future<void> purchase(PurchaseOpt opt, {String requestId = ''}) async {
     if (opt.productId.isEmpty) {
-      throw ArgumentError.value(
-        opt.productId,
-        'productId不能为空',
-        'productId is empty',
+      throw const SkiError(
+        code: 400,
+        message: 'productId不能为空',
+        details: 'productId is empty',
       );
     }
     if (opt.quantity != null && opt.quantity! <= 0) {
-      throw ArgumentError.value(
-        opt.quantity,
-        '购买数量必须大于0',
-        'quantity must be greater than 0',
+      throw const SkiError(
+        code: 400,
+        message: '购买数量必须大于0',
+        details: 'quantity must be greater than 0',
       );
     }
     final arguments = opt.toJson();

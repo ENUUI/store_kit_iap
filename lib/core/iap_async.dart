@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:store_kit_iap/core/data/model.dart';
 import 'package:store_kit_iap/core/ut.dart';
 
+import 'data/error.dart';
 import 'data/result.dart';
 import 'iap.dart';
 import 'iap_callback.dart';
@@ -19,19 +20,15 @@ class StoreKitAsync {
   Future<bool> eligibleForIntroOffer(String productId) {
     final task = _callback.newTask<bool>();
 
-    _storeKit
-        .eligibleForIntroOffer(productId, requestId: task.requestId)
-        .catchError(task.error);
+    _storeKit.eligibleForIntroOffer(productId, requestId: task.requestId).catchError(task.error);
 
     return task.future;
   }
 
   Future<Object?> getProduct(String productId) {
-    final task = _callback.newTask<bool>();
+    final task = _callback.newTask<Object>();
 
-    _storeKit
-        .getProduct(productId, requestId: task.requestId)
-        .catchError(task.error);
+    _storeKit.getProduct(productId, requestId: task.requestId).catchError(task.error);
 
     return task.future;
   }
@@ -115,8 +112,9 @@ class _Task<T> {
 
   Future<T> get future => _completer.future;
 
-  void error(Object error, StackTrace? stackTrace) =>
-      _completer.completeError(error, stackTrace);
+  void error(Object error, StackTrace? stackTrace) {
+    _completer.completeError(SkiError.fromError(error), stackTrace);
+  }
 }
 
 class _StoreKitIapCallback implements StoreKitIapCallback {

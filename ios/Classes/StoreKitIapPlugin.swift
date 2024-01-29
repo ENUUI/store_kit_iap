@@ -68,7 +68,7 @@ private extension StoreKitIapPlugin {
             try fn()
             result(nil)
         } catch let SKIError.arguments(details) {
-            result(FlutterError(code: "404", message: "参数错误", details: details))
+            result(FlutterError(code: "400", message: "参数错误", details: details))
         } catch {
             result(FlutterError(code: "500", message: "未知错误", details: error.localizedDescription))
         }
@@ -99,16 +99,16 @@ private extension StoreKitIapPlugin {
     /// 结束交易
     func finish(_ arguments: Any?, result: @escaping FlutterResult) {
         guard let arguments else {
-            result(FlutterError(code: "404", message: "参数错误", details: ""))
+            result(FlutterError(code: "400", message: "参数错误", details: ""))
             return
         }
 
         guard let id = arguments as? UInt64 else {
-            result(FlutterError(code: "404", message: "参数错误", details: ""))
+            result(FlutterError(code: "400", message: "参数错误", details: ""))
             return
         }
         guard transaction.finish(id) else {
-            result(FlutterError(code: "400", message: "", details: "未找到订单: \(id)"))
+            result(FlutterError(code: "404", message: "", details: "未找到订单: \(id)"))
             return
         }
         result(nil)

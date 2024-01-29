@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'error.g.dart';
@@ -13,6 +14,18 @@ class SkiError with _$SkiError implements Exception {
   }) = _SkiError;
 
   factory SkiError.fromJson(Map<String, dynamic> json) => _$SkiErrorFromJson(json);
+
+  static SkiError fromError(Object error) {
+    if (error is SkiError) {
+      return error;
+    } else if (error is PlatformException) {
+      return SkiError(code: int.tryParse(error.code) ?? 400, message: error.message ?? '', details: error.details);
+    } else if (error is MissingPluginException) {
+      return const SkiError(code: 500, message: '未找到插件');
+    } else {
+      return SkiError(code: 500, message: '未知错误', details: error.toString());
+    }
+  }
 }
 
 extension SkiErrorExtra on SkiError {
