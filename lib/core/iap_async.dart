@@ -56,7 +56,7 @@ class StoreKitAsync {
   /// - 每个非续订订阅的最新交易，包括已完成的订阅
   /// - App Store退款或撤销的产品不会出现在当前的权益中。消耗性应用内购买也不会出现在当前的权益中。
   /// Important: 要获取未完成的消耗性产品的交易，请使用Transaction中的unfinished或all列表。
-  Future<List<Transaction>> current({String requestId = ''}) {
+  Future<List<Transaction>> current() {
     final task = _callback.newTask<List<Transaction>>();
 
     _storeKit.current(requestId: task.requestId).catchError(task.error);
