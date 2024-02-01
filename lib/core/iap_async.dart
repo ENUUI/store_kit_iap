@@ -138,7 +138,10 @@ class _StoreKitIapCallback implements StoreKitIapCallback {
 
   void complete<T>(Result<T> r) {
     final task = _callbacks.remove(r.requestId);
-    if (task == null) return;
+    if (task == null) {
+      assert(false, '未找到对应的task');
+      return;
+    }
     task.complete(r);
   }
 
