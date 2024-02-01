@@ -13,7 +13,7 @@ class StoreKit {
     _channel.setMethodCallHandler((call) => _listenCallback(call.method, call.arguments));
   }
 
-  /// 是否有资格获得试用优惠
+  /// 是否有资格获得推介促销优惠(新用户)
   Future<void> eligibleForIntroOffer(String productId, {String requestId = ''}) async {
     if (productId.isEmpty) {
       throw const SkiError(
@@ -23,6 +23,18 @@ class StoreKit {
       );
     }
     await _channel.invokeMethod('eligible_for_intro_offer', {'product_id': productId, 'request_id': requestId});
+  }
+
+  /// 是否有资格获得促销优惠(正在使用/使用过的用户), 购买提供优惠时，需要签名。
+  Future<void> eligibleForPromotionOffer(String productId, {String requestId = ''}) async {
+    if (productId.isEmpty) {
+      throw const SkiError(
+        code: 400,
+        message: 'productId不能为空',
+        details: 'productId is empty',
+      );
+    }
+    await _channel.invokeMethod('eligible_for_promotion_offer', {'product_id': productId, 'request_id': requestId});
   }
 
   Future<void> getProduct(String productId, {String requestId = ''}) async {
@@ -48,20 +60,11 @@ class StoreKit {
 
   /// 支付
   Future<void> purchase(PurchaseOpt opt, {String requestId = ''}) async {
-    if (opt.productId.isEmpty) {
-      throw const SkiError(
-        code: 400,
-        message: 'productId不能为空',
-        details: 'productId is empty',
-      );
+    final err = opt.validate();
+    if (err != null) {
+      throw err;
     }
-    if (opt.quantity != null && opt.quantity! <= 0) {
-      throw const SkiError(
-        code: 400,
-        message: '购买数量必须大于0',
-        details: 'quantity must be greater than 0',
-      );
-    }
+
     final arguments = opt.toJson();
     arguments['request_id'] = requestId;
     await _channel.invokeMethod('purchase', arguments);
@@ -143,12 +146,19 @@ extension StoreKitCallback on StoreKit {
       case 'all_callback':
         callback.all(_fromData(data));
         break;
-      case 'eligible_callback':
+      case 'intro_offer_callback':
         final r = Result<bool>.fromJson(
           data as Map<String, dynamic>,
           (j) => j as bool,
         );
-        callback.eligibleCallback(r);
+        callback.eligibleIntroOfferCallback(r);
+        break;
+      case 'intro_promotion_callback':
+        final r = Result<bool>.fromJson(
+          data as Map<String, dynamic>,
+          (j) => j as bool,
+        );
+        callback.eligiblePromotionOfferCallback(r);
         break;
       case 'product_callback':
         final r = Result<Map<String, dynamic>>.fromJson(

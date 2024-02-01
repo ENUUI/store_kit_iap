@@ -16,11 +16,20 @@ class StoreKitAsync {
   final StoreKit _storeKit = StoreKit();
   final _callback = _StoreKitIapCallback();
 
-  /// 是否有资格获得试用优惠
+  /// 是否有资格获得推介促销优惠(新用户)
   Future<bool> eligibleForIntroOffer(String productId) {
     final task = _callback.newTask<bool>();
 
     _storeKit.eligibleForIntroOffer(productId, requestId: task.requestId).catchError(task.error);
+
+    return task.future;
+  }
+
+  /// 是否有资格获得促销优惠(正在使用/使用过的用户), 购买提供优惠时，需要签名。
+  Future<bool> eligibleForPromotionOffer(String productId, {String requestId = ''}) {
+    final task = _callback.newTask<bool>();
+
+    _storeKit.eligibleForPromotionOffer(productId, requestId: task.requestId).catchError(task.error);
 
     return task.future;
   }
@@ -144,7 +153,12 @@ class _StoreKitIapCallback implements StoreKitIapCallback {
   }
 
   @override
-  void eligibleCallback(Result<bool> result) {
+  void eligibleIntroOfferCallback(Result<bool> result) {
+    complete(result);
+  }
+
+  @override
+  void eligiblePromotionOfferCallback(Result<bool> result) {
     complete(result);
   }
 

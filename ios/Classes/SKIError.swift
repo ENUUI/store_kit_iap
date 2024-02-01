@@ -1,33 +1,47 @@
 import Foundation
 import StoreKit
 
+/// code  > 4100 支付错误
+/// code  = 499 用户取消
 enum SKIError: Error {
     case arguments(String)
     case pending
     case cancelled(String)
     case other(Error)
     case unknown
+
+    struct SKIErrorContent {
+        let code: Int
+        let message: String
+        let details: String
+
+        init(code: Int, message: String, details: String = "") {
+            self.code = code
+            self.message = message
+            self.details = details
+        }
+    }
 }
 
-extension SKIError: ToMap {
-    func toMap() -> [String: Any?] {
+extension SKIError {
+    func toContent() -> SKIErrorContent {
         switch self {
         case let .arguments(message):
-            ["code": 400, "message": "参数错误", "details": message]
+            SKIErrorContent(code: 400, message: "参数错误", details: message)
         case .pending:
-            ["code": 102, "message": "等待处理"]
+            SKIErrorContent(code: 102, message: "等待处理")
         case let .cancelled(message):
-            ["code": 499, "message": message]
+            SKIErrorContent(code: 499, message: message)
         case let .other(error):
             errorToInfo(error)
         case .unknown:
-            ["code": 500, "message": "未知错误"]
+            SKIErrorContent(code: 500, message: "未知错误")
         }
     }
 
-    private func errorToInfo(_ e: Error) -> [String: Any?] {
+    private func errorToInfo(_ e: Error) -> SKIErrorContent {
         if let skiError = e as? SKIError {
-            return skiError.toMap()
+            return skiError.toContent()
         }
 
         var code = 400
@@ -60,29 +74,43 @@ extension SKIError: ToMap {
                 code = 500
             }
         } else if let pError = e as? Product.PurchaseError {
-            code = 410
+            code = 4100
             switch pError {
             case .invalidQuantity:
+                code += 1
                 message = "购买数量错误"
             case .productUnavailable:
+                code += 2
                 message = "商品不可用"
             case .purchaseNotAllowed:
+                code += 3
                 message = "购买被拒绝"
             case .ineligibleForOffer:
+                code += 4
                 message = "不能享受优惠"
             case .invalidOfferIdentifier:
+                code += 5
                 message = "标识符无效"
             case .invalidOfferPrice:
+                code += 6
                 message = "价格无效"
             case .invalidOfferSignature:
+                code += 7
                 message = "签名无效"
             case .missingOfferParameters:
+                code += 8
                 message = "参数错误"
             @unknown default:
                 message = "未知错误"
             }
         }
 
-        return ["code": code, "message": message, "details": details]
+        return SKIErrorContent(code: code, message: message, details: details)
+    }
+}
+
+extension SKIError.SKIErrorContent: ToMap {
+    func toMap() -> [String: Any?] {
+        ["code": code, "message": message, "details": details]
     }
 }

@@ -15,7 +15,6 @@ enum TransactionState {
   ///  - 支付失败
   @JsonValue('unverified')
   unverified,
-
   unknown,
 }
 
@@ -71,15 +70,72 @@ class PurchaseOpt {
   /// UUID of the transaction
   final String? uuid;
 
+  final Promotion? promotion;
+
   /// Extra data
   final Map<String, String>? extra;
 
   PurchaseOpt({
     required this.productId,
     this.quantity,
+    this.promotion,
     this.uuid,
     this.extra,
   });
 
+  ArgumentError? validate() {
+    if (productId.isEmpty) {
+      return ArgumentError('productId is empty');
+    }
+    if (quantity != null && quantity! <= 0) {
+      return ArgumentError('quantity must be greater than 0');
+    }
+    if (promotion != null) {
+      final error = promotion!.validate();
+      if (error != null) {
+        return error;
+      }
+    }
+    return null;
+  }
+
   Map<String, dynamic> toJson() => _$PurchaseOptToJson(this);
+}
+
+@JsonSerializable(createFactory: false, createToJson: true)
+class Promotion {
+  Promotion({
+    required this.offerId,
+    required this.keyID,
+    required this.nonce,
+    required this.signature,
+    required this.timestamp,
+  });
+
+  final String offerId;
+  final String keyID;
+  final String nonce;
+  final String signature;
+  final int timestamp;
+
+  ArgumentError? validate() {
+    if (offerId.isEmpty) {
+      return ArgumentError('offerId is empty');
+    }
+    if (keyID.isEmpty) {
+      return ArgumentError('keyID is empty');
+    }
+    if (nonce.isEmpty) {
+      return ArgumentError('nonce is empty');
+    }
+    if (signature.isEmpty) {
+      return ArgumentError('signature is empty');
+    }
+    if (timestamp <= 0) {
+      return ArgumentError('timestamp must be greater than 0');
+    }
+    return null;
+  }
+
+  Map<String, dynamic> toJson() => _$PromotionToJson(this);
 }

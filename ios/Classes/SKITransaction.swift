@@ -6,13 +6,14 @@ import StoreKit
 protocol SKITransaction {
     /// 获取vendor id
     func deviceVerificationID() -> String?
-    /// 是否有资格获得试用优惠
+    /// 是否有资格获得推介促销优惠(新用户)
     func eligibleForIntroOffer(_ pid: String, result: @escaping (Swift.Result<Bool, SKIError>) -> Void)
+    /// 是否有资格获得促销优惠(正在使用/使用过的用户), 购买提供优惠时，需要签名。
+    func eligibleForPromotionOffer(_ pid: String, result: @escaping (Swift.Result<Bool, SKIError>) -> Void)
     /// 获取商品数据
     func getProduct(_ pid: String, result: @escaping (Swift.Result<Any, SKIError>) -> Void)
     /// 支付商品
     func purchase(_ p: Opt.Purchase, result: @escaping (SKITransactionResult) -> Void)
-
     /// 未处理的交易
     func unfinished(result: @escaping (SKITransactionsResult) -> Void)
     /// 当前的权益序列
@@ -42,11 +43,23 @@ extension SKITransactionImpl {
         AppStore.deviceVerificationID?.uuidString
     }
 
-    /// 是否有资格获得试用优惠
+    /// 是否有资格获得推介促销优惠(新用户)
     func eligibleForIntroOffer(_ pid: String, result: @escaping (Swift.Result<Bool, SKIError>) -> Void) {
         Task.detached {
             do {
                 let enable = try await self.eligibleForIntroOffer(pid)
+                result(.success(enable))
+            } catch {
+                result(.failure(.other(error)))
+            }
+        }
+    }
+
+    /// 是否有资格获得促销优惠(正在使用/使用过的用户), 购买提供优惠时，需要签名。
+    func eligibleForPromotionOffer(_ pid: String, result: @escaping (Result<Bool, SKIError>) -> Void) {
+        Task.detached {
+            do {
+                let enable = try await self.eligibleForPromotionOffer(pid)
                 result(.success(enable))
             } catch {
                 result(.failure(.other(error)))
@@ -190,13 +203,32 @@ private extension SKITransactionImpl {
 }
 
 private extension SKITransactionImpl {
-    // 有资格获得试用优惠
+    /// 是否有资格获得推介促销优惠(新用户).
     func eligibleForIntroOffer(_ productId: String) async throws -> Bool {
         let product = try await product(productId)
         guard let subscription = product.subscription else {
             throw SKIError.arguments("商品不是订阅类型")
         }
         return await subscription.isEligibleForIntroOffer
+    }
+
+    /// 是否有资格获得促销优惠(正在使用/使用过的用户), 购买提供优惠时，需要签名。
+    func eligibleForPromotionOffer(_ productId: String) async throws -> Bool {
+        let product = try await product(productId)
+        guard let subscription = product.subscription else {
+            throw SKIError.arguments("商品不是订阅类型")
+        }
+
+        let statuses = try await subscription.status
+        if statuses.isEmpty {
+            return false
+        }
+
+        // [product.isFamilyShareable == true] 可能由多个
+        // TODO: 如何处理家庭分享
+        let status = statuses[0]
+
+        return status.state == .expired
     }
 
     /// 通过id获取商品
@@ -274,6 +306,10 @@ private extension Opt.Purchase {
 
         if let quantity {
             options.insert(.quantity(quantity))
+        }
+
+        if let promotion {
+            options.insert(.promotionalOffer(offerID: promotion.offerId, keyID: promotion.keyID, nonce: promotion.nonce, signature: promotion.signature, timestamp: promotion.timestamp))
         }
 
         if let extra, !extra.isEmpty {

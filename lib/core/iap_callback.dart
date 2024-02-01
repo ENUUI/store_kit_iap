@@ -31,7 +31,11 @@ abstract class StoreKitIapCallback {
 
   /// Callback after invoking [StoreKitIap.eligibleForIntroOffer]
   /// 是否可享受商品的优惠的回调
-  void eligibleCallback(Result<bool> result) {}
+  void eligibleIntroOfferCallback(Result<bool> result) {}
+
+  /// Callback after invoking [StoreKitIap.eligibleForPromotionOffer]
+  /// 是否可享受商品的优惠的回调
+  void eligiblePromotionOfferCallback(Result<bool> result) {}
 
   /// Callback after invoking [StoreKitIap.product]
   /// 获取商品信息的回调

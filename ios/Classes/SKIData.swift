@@ -53,7 +53,7 @@ extension R: ToMap {
             data
         }
 
-        return ["request_id": requestId, "error": error?.toMap(), "data": dataToMap]
+        return ["request_id": requestId, "error": error?.toContent().toMap(), "data": dataToMap]
     }
 }
 

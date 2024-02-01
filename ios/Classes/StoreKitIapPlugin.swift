@@ -3,7 +3,8 @@ import UIKit
 
 public class StoreKitIapPlugin: NSObject, FlutterPlugin {
     enum CallbackMethod: String {
-        case eligibleForIntroOffer = "eligible_callback"
+        case eligibleForIntroOffer = "intro_offer_callback"
+        case eligibleForPromotionOffer = "intro_promotion_callback"
         case getProduct = "product_callback"
         case purchase = "purchase_callback"
         case updates = "updates_callback"
@@ -29,8 +30,11 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "eligible_for_intro_offer":
-            // 是否有资格获得试用优惠
+            /// 是否有资格获得推介促销优惠(新用户)
             eligibleForIntroOffer(call.arguments, result: result)
+        case "eligible_for_promotion_offer":
+            /// 是否有资格获得促销优惠(正在使用/使用过的用户), 购买提供优惠时，需要签名。
+            eligibleForPromotionOffer(call.arguments, result: result)
         case "get_product":
             // 获取商品信息
             getProduct(call.arguments, result: result)
@@ -67,8 +71,9 @@ private extension StoreKitIapPlugin {
         do {
             try fn()
             result(nil)
-        } catch let SKIError.arguments(details) {
-            result(FlutterError(code: "400", message: "参数错误", details: details))
+        } catch let err as SKIError {
+            let content = err.toContent()
+            result(FlutterError(code: "\(content.code)", message: content.message, details: content.details))
         } catch {
             result(FlutterError(code: "500", message: "未知错误", details: error.localizedDescription))
         }
@@ -80,6 +85,17 @@ private extension StoreKitIapPlugin {
             let opt = try Opt.Eligible(arguments)
             let pid = opt.productId
             transaction.eligibleForIntroOffer(pid) { r in
+                self.invoke(.eligibleForIntroOffer, arguments: r.toR(requestId: opt.requestId))
+            }
+        }
+    }
+
+    /// 是否有资格获得促销优惠(正在使用/使用过的用户), 购买提供优惠时，需要签名。
+    func eligibleForPromotionOffer(_ arguments: Any?, result: @escaping FlutterResult) {
+        handleError(result) {
+            let opt = try Opt.Eligible(arguments)
+            let pid = opt.productId
+            transaction.eligibleForPromotionOffer(pid) { r in
                 self.invoke(.eligibleForIntroOffer, arguments: r.toR(requestId: opt.requestId))
             }
         }
