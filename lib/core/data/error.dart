@@ -31,4 +31,7 @@ class SkiError with _$SkiError implements Exception {
 extension SkiErrorExtra on SkiError {
   /// 是否是用户取消
   bool get isCancel => code == 499;
+
+  /// 用户不适用优惠
+  bool get isNotEligible => code == 4104;
 }
