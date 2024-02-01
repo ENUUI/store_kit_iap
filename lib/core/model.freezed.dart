@@ -21,8 +21,8 @@ Transaction _$TransactionFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Transaction {
   TransactionState get state => throw _privateConstructorUsedError;
-  String get message => throw _privateConstructorUsedError;
-  String get description => throw _privateConstructorUsedError;
+  String get message => throw _privateConstructorUsedError; // 信息
+  String get description => throw _privateConstructorUsedError; // 失败时的错误信息
   int get transactionId => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -46,9 +46,11 @@ class _$TransactionImpl implements _Transaction {
   @override
   @JsonKey()
   final String message;
+// 信息
   @override
   @JsonKey()
   final String description;
+// 失败时的错误信息
   @override
   @JsonKey()
   final int transactionId;
@@ -59,7 +61,7 @@ class _$TransactionImpl implements _Transaction {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$TransactionImpl &&
@@ -98,8 +100,8 @@ abstract class _Transaction implements Transaction {
   TransactionState get state;
   @override
   String get message;
-  @override
+  @override // 信息
   String get description;
-  @override
+  @override // 失败时的错误信息
   int get transactionId;
 }

@@ -48,8 +48,7 @@ class Transaction with _$Transaction {
     @Default(0) final int transactionId, // 交易 id，当 state 为 verified 时有效
   }) = _Transaction;
 
-  factory Transaction.fromJson(Map<String, dynamic> json) =>
-      _$TransactionFromJson(json);
+  factory Transaction.fromJson(Map<String, dynamic> json) => _$TransactionFromJson(json);
 }
 
 @JsonSerializable(createFactory: false, createToJson: true)
@@ -63,15 +62,37 @@ class PurchaseOpt {
   /// UUID of the transaction
   final String? uuid;
 
+  final Promotion? promotion;
+
   /// Extra data
   final Map<String, String>? extra;
 
   PurchaseOpt({
     required this.productId,
     this.quantity,
+    this.promotion,
     this.uuid,
     this.extra,
   });
 
   Map<String, dynamic> toJson() => _$PurchaseOptToJson(this);
+}
+
+@JsonSerializable(createFactory: false, createToJson: true)
+class Promotion {
+  Promotion({
+    required this.offerId,
+    required this.keyID,
+    required this.nonce,
+    required this.signature,
+    required this.timestamp,
+  });
+
+  final String offerId;
+  final String keyID;
+  final String nonce;
+  final String signature;
+  final int timestamp;
+
+  Map<String, dynamic> toJson() => _$PromotionToJson(this);
 }

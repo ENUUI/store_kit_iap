@@ -273,6 +273,10 @@ private extension Opt.Purchase {
             options.insert(.quantity(quantity))
         }
 
+        if let promotion {
+            options.insert(.promotionalOffer(offerID: promotion.offerId, keyID: promotion.keyID, nonce: promotion.nonce, signature: promotion.signature, timestamp: promotion.timestamp))
+        }
+
         if let extra, !extra.isEmpty {
             for (k, v) in extra {
                 options.insert(.custom(key: k, value: v))

@@ -11,7 +11,16 @@ Map<String, dynamic> _$PurchaseOptToJson(PurchaseOpt instance) =>
       'product_id': instance.productId,
       'quantity': instance.quantity,
       'uuid': instance.uuid,
+      'promotion': instance.promotion?.toJson(),
       'extra': instance.extra,
+    };
+
+Map<String, dynamic> _$PromotionToJson(Promotion instance) => <String, dynamic>{
+      'offer_id': instance.offerId,
+      'key_i_d': instance.keyID,
+      'nonce': instance.nonce,
+      'signature': instance.signature,
+      'timestamp': instance.timestamp,
     };
 
 _$TransactionImpl _$$TransactionImplFromJson(Map<String, dynamic> json) =>
