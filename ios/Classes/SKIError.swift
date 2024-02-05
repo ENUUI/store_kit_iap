@@ -90,7 +90,7 @@ extension SKIError {
                 message = "不能享受优惠"
             case .invalidOfferIdentifier:
                 code += 5
-                message = "标识符无效"
+                message = "优惠标识符无效"
             case .invalidOfferPrice:
                 code += 6
                 message = "价格无效"

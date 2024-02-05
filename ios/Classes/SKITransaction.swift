@@ -266,7 +266,7 @@ private extension SKITransactionImpl {
         switch result {
         case let .unverified(transaction, error):
             // TODO: 如何处理 unverified 时的 transaction
-            return transaction.toDTransaction(.unverified, message: "支付失败", details: error.localizedDescription)
+            return transaction.toDTransaction(.unverified, message: error.localizedDescription, details: error.localizedDescription)
         case let .verified(transaction):
             guard transactionOfDevice(transaction) else {
                 return transaction.toDTransaction(.unverified, message: "交易不属于本设备")
