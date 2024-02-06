@@ -75,12 +75,20 @@ class StoreKitAsync {
 
   /// 当前的权益列表，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
   /// 它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
-  Future<List<Transaction>> updates() {
-    final task = _callback.newTask<List<Transaction>>();
+  Stream<Transaction> updates() {
+    final task = _callback.updatesTask();
+    if (task.running) {
+      return task.stream;
+    }
 
-    _storeKit.updates(requestId: task.requestId).catchError(task.error);
+    task.running = true;
+    _storeKit.updates().catchError(task.error);
 
-    return task.future;
+    return task.stream;
+  }
+
+  Future<void> cancelUpdates() async {
+    await _storeKit.cancelUpdates();
   }
 
   /// 需要处理的交易。未处理的交易会在启动时的 updates 中返回
@@ -102,12 +110,62 @@ class StoreKitAsync {
   }
 }
 
-class _Task<T> {
-  final _completer = Completer<T>();
-  final String requestId;
-
+abstract class _Task<T> {
   _Task(this.requestId);
 
+  final String requestId;
+
+  void complete(Result<T> result);
+
+  void error(Object error, StackTrace? stackTrace);
+}
+
+class _SequenceTask<T> extends _Task<T> {
+  _SequenceTask() : super('');
+
+  Stream<T> get stream => _controller.stream;
+  final StreamController<T> _controller = StreamController<T>.broadcast();
+
+  bool running = false;
+
+  @override
+  void complete(Result<T> result) {
+    if (result.requestId != requestId) return;
+    final error = result.error;
+    if (error != null) {
+      _controller.addError(error);
+      return;
+    }
+
+    final data = result.data;
+    if (data == null) {
+      _controller.addError(
+        SkiError(
+          code: 500,
+          message: '未知错误',
+          details: '[$runtimeType.data] is null. Sequence Task Event cannot be null.',
+        ),
+        StackTrace.current,
+      );
+      return;
+    }
+
+    _controller.add(data);
+  }
+
+  @override
+  void error(Object error, StackTrace? stackTrace) {
+    _controller.addError(SkiError.fromError(error), stackTrace);
+  }
+}
+
+class _RequestTask<T> extends _Task<T> {
+  _RequestTask(super.requestId);
+
+  Future<T> get future => _completer.future;
+  final _completer = Completer<T>();
+
+  @override
   void complete(Result<T> result) {
     if (result.requestId != requestId) return;
     if (_completer.isCompleted) return;
@@ -119,8 +177,7 @@ class _Task<T> {
     }
   }
 
-  Future<T> get future => _completer.future;
-
+  @override
   void error(Object error, StackTrace? stackTrace) {
     _completer.completeError(SkiError.fromError(error), stackTrace);
   }
@@ -129,10 +186,23 @@ class _Task<T> {
 class _StoreKitIapCallback implements StoreKitIapCallback {
   final _callbacks = <String, _Task>{};
 
-  _Task<T> newTask<T>() {
+  _RequestTask<T> newTask<T>() {
     final requestId = uuid();
-    final task = _Task<T>(requestId);
+    final task = _RequestTask<T>(requestId);
     _callbacks[requestId] = task;
+    return task;
+  }
+
+  _SequenceTask<Transaction>? _updatesTask;
+
+  _SequenceTask<Transaction> updatesTask() {
+    _SequenceTask<Transaction>? task = _updatesTask;
+    if (task != null) {
+      return task;
+    }
+
+    task = _SequenceTask<Transaction>();
+    _updatesTask = task;
     return task;
   }
 
@@ -181,7 +251,13 @@ class _StoreKitIapCallback implements StoreKitIapCallback {
   }
 
   @override
-  void updates(Result<List<Transaction>> result) {
-    complete(result);
+  void updates(Result<Transaction> result) {
+    _SequenceTask<Transaction>? task = _updatesTask;
+    if (task == null) {
+      assert(false, '未找到对应的task');
+      return;
+    }
+
+    task.complete(result);
   }
 }

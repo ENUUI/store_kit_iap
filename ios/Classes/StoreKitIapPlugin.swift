@@ -50,6 +50,8 @@ public class StoreKitIapPlugin: NSObject, FlutterPlugin {
         case "updates":
             /// 监听是否有交易更新
             updates(call.arguments, result: result)
+        case "cancel_updates":
+            cancelUpdates(result: result)
         case "current":
             // 获取当前可用的交易
             current(call.arguments, result: result)
@@ -146,13 +148,18 @@ private extension StoreKitIapPlugin {
     }
 
     /// 监听是否有交易更新
-    func updates(_ arguments: Any?, result: @escaping FlutterResult) {
-        handleError(result) {
-            let opt = try Opt.CallbackReq(arguments)
-            transaction.updates {
-                self.invoke(.updates, arguments: $0.toR(requestId: opt.requestId))
-            }
-        }
+    func updates(_: Any?, result: @escaping FlutterResult) {
+        transaction.updatesDelegate = self
+        transaction.updates()
+
+        result(nil)
+    }
+
+    func cancelUpdates(result: @escaping FlutterResult) {
+        transaction.updatesDelegate = nil
+        transaction.cancelUpdates()
+
+        result(nil)
     }
 
     /// 获取当前可用的交易
@@ -183,6 +190,12 @@ private extension StoreKitIapPlugin {
                 self.invoke(.all, arguments: $0.toR(requestId: opt.requestId))
             }
         }
+    }
+}
+
+extension StoreKitIapPlugin: SKIUpdatesDelegate {
+    func onUpdate(transaction: SKITransactionResult) {
+        invoke(CallbackMethod.updates, arguments: transaction.toR(requestId: ""))
     }
 }
 

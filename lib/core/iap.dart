@@ -82,8 +82,16 @@ class StoreKit {
 
   /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
   /// 它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
-  Future<void> updates({String requestId = ''}) async {
-    await _channel.invokeMethod('updates', requestId);
+  /// 每当用户购买或恢复购买产品时，都会触发此序列。
+  /// 监听此序列， 每接受到一个交易更新，都会回调 [StoreKitIapCallback.updates]。
+  /// 通过调用 [cancelUpdates] 取消监听。
+  Future<void> updates() async {
+    await _channel.invokeMethod('updates');
+  }
+
+  /// 取消监听更新
+  Future<void> cancelUpdates() async {
+    await _channel.invokeMethod('cancel_updates');
   }
 
   /// 需要处理的交易。未处理的交易会在启动时的 updates 中返回
@@ -135,7 +143,11 @@ extension StoreKitCallback on StoreKit {
         callback.purchase(r);
         break;
       case 'updates_callback':
-        callback.updates(_fromData(data));
+        final r = Result<Transaction>.fromJson(
+          data as Map<String, dynamic>,
+          (j) => Transaction.fromJson(j as Map<String, dynamic>),
+        );
+        callback.updates(r);
         break;
       case 'current_callback':
         callback.current(_fromData(data));

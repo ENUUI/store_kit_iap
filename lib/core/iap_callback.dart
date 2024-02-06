@@ -18,7 +18,7 @@ abstract class StoreKitIapCallback {
   /// Callback after invoking [StoreKitIap.updates]
   /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
   /// 它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
-  void updates(Result<List<Transaction>> result) {}
+  void updates(Result<Transaction> result) {}
 
   /// Callback after invoking [StoreKitIap.unfinished]
   /// 需要处理的交易。未处理的交易会在启动时的 updates 中返回

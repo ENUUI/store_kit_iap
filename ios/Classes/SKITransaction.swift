@@ -3,7 +3,15 @@ import Dispatch
 import Foundation
 import StoreKit
 
+/// 回调 update 结果
+protocol SKIUpdatesDelegate {
+    func onUpdate(transaction: SKITransactionResult)
+}
+
+/// interfaces
 protocol SKITransaction {
+    var updatesDelegate: SKIUpdatesDelegate? { set get }
+
     /// 获取vendor id
     func deviceVerificationID() -> String?
     /// 是否有资格获得推介促销优惠(新用户)
@@ -21,7 +29,10 @@ protocol SKITransaction {
     /// https://stackoverflow.com/questions/69768519/appstore-sync-not-restoring-purchases
     func current(result: @escaping (SKITransactionsResult) -> Void)
     /// 获取有更新的交易
-    func updates(result: @escaping (SKITransactionsResult) -> Void)
+    func updates()
+
+    func cancelUpdates()
+
     /// 所有交易
     func all(result: @escaping (SKITransactionsResult) -> Void)
 
@@ -30,11 +41,67 @@ protocol SKITransaction {
 }
 
 /// 交易
-class SKITransactionImpl: SKITransaction {
+final class SKITransactionImpl: SKITransaction {
     init() {}
 
     private var transactionCaches: [UInt64: Transaction] = [:]
     private var semaphore = DispatchSemaphore(value: 1)
+
+    fileprivate lazy var updatesOb = SKITransactionImpl.UpdatesObserver {
+        self.updatesDelegate?.onUpdate(transaction: .success(self.verificationResult($0)))
+    }
+
+    var updatesDelegate: SKIUpdatesDelegate?
+}
+
+// Updates
+extension SKITransactionImpl {
+    fileprivate final class UpdatesObserver {
+        var updates: Task<Void, Never>?
+        var resultCallback: (VerificationResult<Transaction>) -> Void
+
+        init(resultCallback: @escaping (VerificationResult<Transaction>) -> Void) {
+            self.resultCallback = resultCallback
+        }
+
+        deinit {
+            updates?.cancel()
+        }
+
+        func start() {
+            guard updates == nil || updates?.isCancelled == true else {
+                return
+            }
+
+            updates = newTransactionListenerTask()
+        }
+
+        func cancel() {
+            updates?.cancel()
+            updates = nil
+        }
+
+        private func newTransactionListenerTask() -> Task<Void, Never> {
+            Task(priority: .background) {
+                for await result in Transaction.updates {
+                    self.handle(updatedTransaction: result)
+                }
+            }
+        }
+
+        private func handle(updatedTransaction result: VerificationResult<Transaction>) {
+            resultCallback(result)
+        }
+    }
+
+    /// 当前的权益序列
+    func updates() {
+        updatesOb.start()
+    }
+
+    func cancelUpdates() {
+        updatesOb.cancel()
+    }
 }
 
 extension SKITransactionImpl {
@@ -109,13 +176,6 @@ extension SKITransactionImpl {
             } catch {
                 result(.failure(.other(error)))
             }
-        }
-    }
-
-    /// 当前的权益序列
-    func updates(result: @escaping (SKITransactionsResult) -> Void) {
-        Task.detached {
-            await result(.success(self.updates()))
         }
     }
 
