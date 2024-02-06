@@ -89,7 +89,7 @@ class StoreKitAsync {
 
   Future<void> cancelUpdates() async {
     final task = _callback.updatesTask();
-    task.cancel();
+    task.running = false;
     await _storeKit.cancelUpdates();
   }
 
@@ -158,10 +158,6 @@ class _SequenceTask<T> extends _Task<T> {
   @override
   void error(Object error, StackTrace? stackTrace) {
     _controller.addError(SkiError.fromError(error), stackTrace);
-  }
-
-  Future<void> cancel() async {
-    await _controller.close();
   }
 }
 
