@@ -1,102 +1,74 @@
 import Foundation
 
-typealias SKITransactionsResult = Swift.Result<D.TransactionList, SKIError>
-typealias SKITransactionResult = Swift.Result<D.Transaction, SKIError>
+typealias SKITransactionsResult = Swift.Result<[TransactionData], SKIError>
+typealias SKITransactionResult = Swift.Result<TransactionData, SKIError>
 
-protocol ToMap {
-    func toMap() -> [String: Any?]
-}
-
-enum D {
-    typealias TransactionList = [D.Transaction]
-
-    struct Transaction {
-        enum State: String {
-            case verified
-            /// 失败
-            ///  - 获取商品失败
-            ///  - 拉起支付失败
-            ///  - 支付失败
-            case unverified
-        }
-
-        let id: UInt64 // Transaction.Id
-        let originalID: UInt64 // Transaction.originalID
-        let productId: String
-        let state: State // 状态
-        let message: String // 错误信息
-        let details: String // 错误信息详情
-        let env: String // 订单生产当环境
+struct TransactionData {
+    enum State: String {
+        case verified
+        /// 失败
+        ///  - 获取商品失败
+        ///  - 拉起支付失败
+        ///  - 支付失败
+        case unverified
     }
+
+    let id: UInt64 // Transaction.Id
+    let originalID: UInt64 // Transaction.originalID
+    let productId: String
+    let state: State // 状态
+    let message: String // 错误信息
+    let details: String // 错误信息详情
+    let env: String // 订单生产当环境
 }
 
-extension D.Transaction: ToMap {
+extension TransactionData {
     func toMap() -> [String: Any?] {
         ["id": id, "original_id": originalID, "product_id": productId, "state": state.rawValue, "message": message, "details": details, "env": env]
     }
 }
 
 /// 通过channel返回给flutter端的结果
-struct R<T> {
-    let requestId: String
-    let data: T?
-    let error: SKIError?
-}
-
-extension R: ToMap {
-    func toMap() -> [String: Any?] {
-        let dataToMap: Any? = if data is ToMap {
-            (data as! ToMap).toMap()
-        } else if data is D.TransactionList {
-            (data as! D.TransactionList).map { $0.toMap() }
-        } else {
-            data
-        }
-
-        return ["request_id": requestId, "error": error?.toContent().toMap(), "data": dataToMap]
-    }
-}
-
 extension SKITransactionsResult {
-    func toR(requestId: String) -> R<D.TransactionList> {
+    func toMap() -> [String: Any?] {
         switch self {
-        case let .success(transactions):
-            R(requestId: requestId, data: transactions, error: nil)
+        case let .success(data):
+            ["data": data.map { $0.toMap() }]
         case let .failure(error):
-            R(requestId: requestId, data: nil, error: error)
+            ["error": error.toMap()]
         }
     }
 }
 
 extension SKITransactionResult {
-    func toR(requestId: String) -> R<D.Transaction> {
+    func toMap() -> [String: Any?] {
         switch self {
-        case let .success(transaction):
-            R(requestId: requestId, data: transaction, error: nil)
+        case let .success(data):
+            ["data": data.toMap()]
         case let .failure(error):
-            R(requestId: requestId, data: nil, error: error)
+            ["error": error.toMap()]
         }
     }
 }
 
 extension Swift.Result<Bool, SKIError> {
-    func toR(requestId: String) -> R<Bool> {
+    func toMap() -> [String: Any?] {
         switch self {
-        case let .success(enable):
-            R(requestId: requestId, data: enable, error: nil)
+        case let .success(data):
+            ["data": data]
         case let .failure(error):
-            R(requestId: requestId, data: nil, error: error)
+            ["error": error.toMap()]
         }
     }
 }
 
-extension Swift.Result<Any, SKIError> {
-    func toR(requestId: String) -> R<Any> {
+extension Swift.Result<Data, SKIError> {
+    func toMap() -> [String: Any?] {
         switch self {
-        case let .success(product):
-            R(requestId: requestId, data: product, error: nil)
+        case let .success(data):
+            ["data": data]
         case let .failure(error):
-            R(requestId: requestId, data: nil, error: error)
+            ["error": error.toMap()]
         }
     }
 }

@@ -1,73 +1,106 @@
-import 'package:flutter/services.dart';
+import 'dart:async';
 
-import 'data/error.dart';
-import 'data/result.dart';
-import 'iap_callback.dart';
-import 'data/model.dart';
+import 'package:flutter/foundation.dart';
+
+import 'iap_flutter_api.dart';
+import 'messages.g.dart';
+import 'data.dart';
 
 class StoreKit {
-  static const _channel = MethodChannel('enuui.packages/store_kit_iap');
-  StoreKitIapCallback? _callback;
-
-  StoreKit() {
-    _channel.setMethodCallHandler((call) => _listenCallback(call.method, call.arguments));
+  StoreKit({@visibleForTesting StoreKitIosApi? hostApi})
+      : _hostApi = hostApi ?? StoreKitIosApi() {
+    StoreKitFlutterApi.setUp(_flutterApi);
   }
+
+  final StoreKitIosApi _hostApi;
+  final _flutterApi = StoreKitFlutterApiImpl();
+
+  /// After call [StoreKit.all], the result will be callback by [StoreKit.allTransactions]
+  Stream<List<Transaction>> get allTransactions =>
+      _flutterApi.allTransactionController.stream;
+
+  /// After call [StoreKit.current], the result will be callback by [StoreKit.currentTransactions]
+  Stream<List<Transaction>> get currentTransactions =>
+      _flutterApi.currentTransactionController.stream;
+
+  /// After call [StoreKit.unfinished], the result will be callback by [StoreKit.unfinishedTransactions]
+  Stream<List<Transaction>> get unfinishedTransactions =>
+      _flutterApi.unfinishedTransactionController.stream;
 
   /// 是否有资格获得推介促销优惠(新用户)
-  Future<void> eligibleForIntroOffer(String productId, {String requestId = ''}) async {
+  Stream<bool> get introOffer =>
+      _flutterApi.introOfferTransactionController.stream;
+
+  /// After call [StoreKit.getProduct], the result will be callback by [StoreKit.product]
+  Stream<Uint8List> get product =>
+      _flutterApi.productTransactionController.stream;
+
+  /// 支付完成回调
+  Stream<Transaction> get purchased =>
+      _flutterApi.purchasedTransactionController.stream;
+
+  /// 当开启监听交易更新时，其有更新发生，更新会由[updateTransaction]回调
+  Stream<Transaction> get updateTransaction =>
+      _flutterApi.updateTransactionController.stream;
+
+  /// 是否有资格获得推介促销优惠(新用户)
+  Future<void> eligibleForIntroOffer(String productId) {
     if (productId.isEmpty) {
-      throw const SkiError(
-        code: 400,
-        message: 'productId不能为空',
-        details: 'productId is empty',
+      return Future.error(
+        const SkiError(
+          code: 400,
+          message: 'productId不能为空',
+          details: 'productId is empty',
+        ),
+        StackTrace.current,
       );
     }
-    await _channel.invokeMethod('eligible_for_intro_offer', {'product_id': productId, 'request_id': requestId});
+
+    return _hostApi.eligibleForIntroOffer(productId);
   }
 
-  /// 是否有资格获得促销优惠(正在使用/使用过的用户), 购买提供优惠时，需要签名。
-  Future<void> eligibleForPromotionOffer(String productId, {String requestId = ''}) async {
+  Future<void> getProduct(String productId, {String requestId = ''}) {
     if (productId.isEmpty) {
-      throw const SkiError(
-        code: 400,
-        message: 'productId不能为空',
-        details: 'productId is empty',
+      return Future.error(
+        const SkiError(
+          code: 400,
+          message: 'productId不能为空',
+          details: 'productId is empty',
+        ),
+        StackTrace.current,
       );
     }
-    await _channel.invokeMethod('eligible_for_promotion_offer', {'product_id': productId, 'request_id': requestId});
-  }
 
-  Future<void> getProduct(String productId, {String requestId = ''}) async {
-    if (productId.isEmpty) {
-      throw const SkiError(
-        code: 400,
-        message: 'productId不能为空',
-        details: 'productId is empty',
-      );
-    }
-    await _channel.invokeMethod('get_product', {'product_id': productId, 'request_id': requestId});
+    return _hostApi.getProduct(productId);
   }
 
   /// 关闭订单
-  Future<void> finish(int transactionId) async {
-    await _channel.invokeMethod('finish_transaction', transactionId);
+  Future<void> finish(int transactionId) {
+    if (transactionId <= 0) {
+      return Future.error(
+        const SkiError(
+          code: 400,
+          message: 'transactionId 不能小于 0',
+          details: 'transactionId must be bigger then 0.',
+        ),
+        StackTrace.current,
+      );
+    }
+    return _hostApi.finish(transactionId);
   }
 
-  Future<String> vendorId() async {
-    final result = await _channel.invokeMethod('vendor_id');
-    return result as String? ?? '';
+  Future<String> vendorId() {
+    return _hostApi.vendorId();
   }
 
   /// 支付
-  Future<void> purchase(PurchaseOpt opt, {String requestId = ''}) async {
+  Future<void> purchase(PurchaseOpt opt) async {
     final err = opt.validate();
     if (err != null) {
-      throw err;
+      return Future.error(err, StackTrace.current);
     }
 
-    final arguments = opt.toJson();
-    arguments['request_id'] = requestId;
-    await _channel.invokeMethod('purchase', arguments);
+    return _hostApi.purchase(opt.toJson());
   }
 
   /// 当前的权益序列会发出用户拥有权益的每个产品的最新交易，具体包括：
@@ -76,8 +109,8 @@ class StoreKit {
   /// - 每个非续订订阅的最新交易，包括已完成的订阅
   /// - App Store退款或撤销的产品不会出现在当前的权益中。消耗性应用内购买也不会出现在当前的权益中。
   /// Important: 要获取未完成的消耗性产品的交易，请使用Transaction中的unfinished或all序列。
-  Future<void> current({String requestId = ''}) async {
-    await _channel.invokeMethod('current', requestId);
+  Future<void> current() {
+    return _hostApi.current();
   }
 
   /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
@@ -85,121 +118,23 @@ class StoreKit {
   /// 每当用户购买或恢复购买产品时，都会触发此序列。
   /// 监听此序列， 每接受到一个交易更新，都会回调 [StoreKitIapCallback.updates]。
   /// 通过调用 [cancelUpdates] 取消监听。
-  Future<void> updates() async {
-    await _channel.invokeMethod('updates');
+  Future<void> updates() {
+    return _hostApi.updates();
   }
 
   /// 取消监听更新
-  Future<void> cancelUpdates() async {
-    await _channel.invokeMethod('cancel_updates');
+  Future<void> cancelUpdates() {
+    return _hostApi.cancelUpdates();
   }
 
   /// 需要处理的交易。未处理的交易会在启动时的 updates 中返回
-  Future<void> unfinished({String requestId = ''}) async {
-    await _channel.invokeMethod('unfinished', requestId);
+  Future<void> unfinished() {
+    return _hostApi.unfinished();
   }
 
   /// 交易历史记录包括应用程序尚未通过调用finish()完成的可消耗应用内购买。
   /// 它不包括已完成的可消耗产品或已完成的非续订订阅，重新购买的非消耗性产品或订阅，或已恢复的购买。
-  Future<void> all({String requestId = ''}) async {
-    await _channel.invokeMethod('all', requestId);
-  }
-}
-
-extension StoreKitCallback on StoreKit {
-  /// 添加监听器
-  void addListener(StoreKitIapCallback callback) {
-    assert(() {
-      if (_callback != null) {
-        throw StateError('只能添加一个监听器');
-      }
-      return true;
-    }());
-    if (_callback != null) {
-      return;
-    }
-    _callback = callback;
-  }
-
-  Future<void> _listenCallback(String method, dynamic arguments) async {
-    assert(() {
-      print('[StoreKit] callback method: $method, arguments: $arguments');
-      return true;
-    }());
-    final callback = _callback;
-    if (callback == null) {
-      assert(false, '未添加监听器');
-      return;
-    }
-
-    final data = _castArguments(arguments);
-
-    switch (method) {
-      case 'purchase_callback':
-        final r = Result<Transaction>.fromJson(
-          data as Map<String, dynamic>,
-          (j) => Transaction.fromJson(j as Map<String, dynamic>),
-        );
-        callback.purchase(r);
-        break;
-      case 'updates_callback':
-        final r = Result<Transaction>.fromJson(
-          data as Map<String, dynamic>,
-          (j) => Transaction.fromJson(j as Map<String, dynamic>),
-        );
-        callback.updates(r);
-        break;
-      case 'current_callback':
-        callback.current(_fromData(data));
-        break;
-      case 'unfinished_callback':
-        callback.unfinished(_fromData(data));
-        break;
-      case 'all_callback':
-        callback.all(_fromData(data));
-        break;
-      case 'intro_offer_callback':
-        final r = Result<bool>.fromJson(
-          data as Map<String, dynamic>,
-          (j) => j as bool,
-        );
-        callback.eligibleIntroOfferCallback(r);
-        break;
-      case 'intro_promotion_callback':
-        final r = Result<bool>.fromJson(
-          data as Map<String, dynamic>,
-          (j) => j as bool,
-        );
-        callback.eligiblePromotionOfferCallback(r);
-        break;
-      case 'product_callback':
-        final r = Result<Map<String, dynamic>>.fromJson(
-          data as Map<String, dynamic>,
-          (j) => j as Map<String, dynamic>,
-        );
-        callback.productCallback(r);
-      default:
-        assert(false, '未知的方法 $method');
-        break;
-    }
-  }
-
-  Result<List<Transaction>> _fromData(dynamic data) {
-    return Result<List<Transaction>>.fromJson(
-      data as Map<String, dynamic>,
-      (j) => (j as List).map((e) => Transaction.fromJson(e as Map<String, dynamic>)).toList(),
-    );
-  }
-
-  Object? _castArguments(dynamic arguments) {
-    if (arguments is List) {
-      return arguments.map((e) => _castArguments(e)).toList();
-    }
-
-    if (arguments is Map) {
-      return arguments.map((key, value) => MapEntry(key as String, _castArguments(value)));
-    }
-
-    return arguments;
+  Future<void> all() {
+    return _hostApi.all();
   }
 }

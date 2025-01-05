@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'model.dart';
+part of '../data.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -12,7 +12,7 @@ part of 'model.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
 TransactionList _$TransactionListFromJson(Map<String, dynamic> json) {
   return _TransactionList.fromJson(json);
@@ -22,6 +22,7 @@ TransactionList _$TransactionListFromJson(Map<String, dynamic> json) {
 mixin _$TransactionList {
   List<Transaction>? get data => throw _privateConstructorUsedError;
 
+  /// Serializes this TransactionList to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 }
 
@@ -59,7 +60,7 @@ class _$TransactionListImpl implements _TransactionList {
             const DeepCollectionEquality().equals(other._data, _data));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode =>
       Object.hash(runtimeType, const DeepCollectionEquality().hash(_data));
@@ -97,6 +98,7 @@ mixin _$Transaction {
   String get description => throw _privateConstructorUsedError; // 失败时的错误信息
   TransactionEnv get env => throw _privateConstructorUsedError;
 
+  /// Serializes this Transaction to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 }
 
@@ -162,7 +164,7 @@ class _$TransactionImpl implements _Transaction {
             (identical(other.env, env) || other.env == env));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
       runtimeType, id, originalId, productId, state, message, description, env);
@@ -193,13 +195,171 @@ abstract class _Transaction implements Transaction {
   @override
   int get originalId;
   @override
-  String get productId;
-  @override // 信息
+  String get productId; // 信息
+  @override
   TransactionState get state;
   @override
-  String get message;
-  @override // 信息
-  String get description;
-  @override // 失败时的错误信息
+  String get message; // 信息
+  @override
+  String get description; // 失败时的错误信息
+  @override
   TransactionEnv get env;
+}
+
+Result<T> _$ResultFromJson<T>(
+    Map<String, dynamic> json, T Function(Object?) fromJsonT) {
+  return _Result<T>.fromJson(json, fromJsonT);
+}
+
+/// @nodoc
+mixin _$Result<T> {
+  String get requestId => throw _privateConstructorUsedError; // 是否有资格
+  SkiError? get error =>
+      throw _privateConstructorUsedError; // 错误信息, 如果错误信息不为空，则代表请求失败
+  T? get data => throw _privateConstructorUsedError;
+
+  /// Serializes this Result to a JSON map.
+  Map<String, dynamic> toJson(Object? Function(T) toJsonT) =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+@JsonSerializable(genericArgumentFactories: true)
+class _$ResultImpl<T> implements _Result<T> {
+  const _$ResultImpl({this.requestId = '', this.error, this.data});
+
+  factory _$ResultImpl.fromJson(
+          Map<String, dynamic> json, T Function(Object?) fromJsonT) =>
+      _$$ResultImplFromJson(json, fromJsonT);
+
+  @override
+  @JsonKey()
+  final String requestId;
+// 是否有资格
+  @override
+  final SkiError? error;
+// 错误信息, 如果错误信息不为空，则代表请求失败
+  @override
+  final T? data;
+
+  @override
+  String toString() {
+    return 'Result<$T>(requestId: $requestId, error: $error, data: $data)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ResultImpl<T> &&
+            (identical(other.requestId, requestId) ||
+                other.requestId == requestId) &&
+            (identical(other.error, error) || other.error == error) &&
+            const DeepCollectionEquality().equals(other.data, data));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType, requestId, error, const DeepCollectionEquality().hash(data));
+
+  @override
+  Map<String, dynamic> toJson(Object? Function(T) toJsonT) {
+    return _$$ResultImplToJson<T>(this, toJsonT);
+  }
+}
+
+abstract class _Result<T> implements Result<T> {
+  const factory _Result(
+      {final String requestId,
+      final SkiError? error,
+      final T? data}) = _$ResultImpl<T>;
+
+  factory _Result.fromJson(
+          Map<String, dynamic> json, T Function(Object?) fromJsonT) =
+      _$ResultImpl<T>.fromJson;
+
+  @override
+  String get requestId; // 是否有资格
+  @override
+  SkiError? get error; // 错误信息, 如果错误信息不为空，则代表请求失败
+  @override
+  T? get data;
+}
+
+SkiError _$SkiErrorFromJson(Map<String, dynamic> json) {
+  return _SkiError.fromJson(json);
+}
+
+/// @nodoc
+mixin _$SkiError {
+  int get code => throw _privateConstructorUsedError;
+  String get message => throw _privateConstructorUsedError;
+  String get details => throw _privateConstructorUsedError;
+
+  /// Serializes this SkiError to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$SkiErrorImpl implements _SkiError {
+  const _$SkiErrorImpl(
+      {this.code = 0, this.message = '未知错误', this.details = ''});
+
+  factory _$SkiErrorImpl.fromJson(Map<String, dynamic> json) =>
+      _$$SkiErrorImplFromJson(json);
+
+  @override
+  @JsonKey()
+  final int code;
+  @override
+  @JsonKey()
+  final String message;
+  @override
+  @JsonKey()
+  final String details;
+
+  @override
+  String toString() {
+    return 'SkiError(code: $code, message: $message, details: $details)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SkiErrorImpl &&
+            (identical(other.code, code) || other.code == code) &&
+            (identical(other.message, message) || other.message == message) &&
+            (identical(other.details, details) || other.details == details));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, code, message, details);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$SkiErrorImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _SkiError implements SkiError {
+  const factory _SkiError(
+      {final int code,
+      final String message,
+      final String details}) = _$SkiErrorImpl;
+
+  factory _SkiError.fromJson(Map<String, dynamic> json) =
+      _$SkiErrorImpl.fromJson;
+
+  @override
+  int get code;
+  @override
+  String get message;
+  @override
+  String get details;
 }

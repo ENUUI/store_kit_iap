@@ -107,10 +107,9 @@ extension SKIError {
 
         return SKIErrorContent(code: code, message: message, details: details)
     }
-}
 
-extension SKIError.SKIErrorContent: ToMap {
     func toMap() -> [String: Any?] {
-        ["code": code, "message": message, "details": details]
+        let content = toContent()
+        return ["code": content.code, "message": content.message, "details": content.details]
     }
 }

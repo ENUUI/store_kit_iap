@@ -1,8 +1,9 @@
+import 'package:flutter/services.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'model.freezed.dart';
+part 'gen/data.freezed.dart';
 
-part 'model.g.dart';
+part 'gen/data.g.dart';
 
 enum TransactionState {
   /// 支付成功
@@ -41,7 +42,8 @@ class TransactionList with _$TransactionList {
     @Default(<Transaction>[]) final List<Transaction>? data,
   }) = _TransactionList;
 
-  factory TransactionList.fromJson(Map<String, dynamic> json) => _$TransactionListFromJson(json);
+  factory TransactionList.fromJson(Map<String, dynamic> json) =>
+      _$TransactionListFromJson(json);
 }
 
 @freezed
@@ -56,7 +58,8 @@ class Transaction with _$Transaction {
     @Default(TransactionEnv.unknown) final TransactionEnv env, // 生成订单的环境
   }) = _Transaction;
 
-  factory Transaction.fromJson(Map<String, dynamic> json) => _$TransactionFromJson(json);
+  factory Transaction.fromJson(Map<String, dynamic> json) =>
+      _$TransactionFromJson(json);
 }
 
 @JsonSerializable(createFactory: false, createToJson: true)
@@ -70,6 +73,7 @@ class PurchaseOpt {
   /// UUID of the transaction
   final String? uuid;
 
+  /// 参加促销优惠（非推介促销优惠）时必填
   final Promotion? promotion;
 
   /// Extra data
@@ -102,6 +106,7 @@ class PurchaseOpt {
   Map<String, dynamic> toJson() => _$PurchaseOptToJson(this);
 }
 
+/// https://developer.apple.com/documentation/storekit/implementing-promotional-offers-in-your-app
 @JsonSerializable(createFactory: false, createToJson: true)
 class Promotion {
   Promotion({
@@ -138,4 +143,53 @@ class Promotion {
   }
 
   Map<String, dynamic> toJson() => _$PromotionToJson(this);
+}
+
+typedef FromJson<T> = T Function(Object? json);
+
+@Freezed(genericArgumentFactories: true)
+class Result<T> with _$Result<T> {
+  const factory Result({
+    @Default('') final String requestId, // 是否有资格
+    final SkiError? error, // 错误信息, 如果错误信息不为空，则代表请求失败
+    final T? data,
+  }) = _Result;
+
+  factory Result.fromJson(Map<String, dynamic> json, FromJson<T> fromJsonT) =>
+      _$ResultFromJson(json, fromJsonT);
+}
+
+@freezed
+class SkiError with _$SkiError implements Exception {
+  const factory SkiError({
+    @Default(0) final int code,
+    @Default('未知错误') final String message,
+    @Default('') final String details,
+  }) = _SkiError;
+
+  factory SkiError.fromJson(Map<String, dynamic> json) =>
+      _$SkiErrorFromJson(json);
+
+  static SkiError fromError(Object error) {
+    if (error is SkiError) {
+      return error;
+    } else if (error is PlatformException) {
+      return SkiError(
+          code: int.tryParse(error.code) ?? 400,
+          message: error.message ?? '',
+          details: error.details);
+    } else if (error is MissingPluginException) {
+      return const SkiError(code: 500, message: '未找到插件');
+    } else {
+      return SkiError(code: 500, message: '未知错误', details: error.toString());
+    }
+  }
+}
+
+extension SkiErrorExtra on SkiError {
+  /// 是否是用户取消
+  bool get isCancel => code == 499;
+
+  /// 用户不适用优惠
+  bool get isNotEligible => code == 4104;
 }

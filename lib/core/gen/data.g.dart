@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'model.dart';
+part of '../data.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
@@ -40,8 +40,8 @@ Map<String, dynamic> _$$TransactionListImplToJson(
 
 _$TransactionImpl _$$TransactionImplFromJson(Map<String, dynamic> json) =>
     _$TransactionImpl(
-      id: json['id'] as int? ?? 0,
-      originalId: json['original_id'] as int? ?? 0,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      originalId: (json['original_id'] as num?)?.toInt() ?? 0,
       productId: json['product_id'] as String? ?? '',
       state: $enumDecodeNullable(_$TransactionStateEnumMap, json['state']) ??
           TransactionState.unknown,
@@ -74,3 +74,51 @@ const _$TransactionEnvEnumMap = {
   TransactionEnv.xcode: 'xcode',
   TransactionEnv.unknown: 'unknown',
 };
+
+_$ResultImpl<T> _$$ResultImplFromJson<T>(
+  Map<String, dynamic> json,
+  T Function(Object? json) fromJsonT,
+) =>
+    _$ResultImpl<T>(
+      requestId: json['request_id'] as String? ?? '',
+      error: json['error'] == null
+          ? null
+          : SkiError.fromJson(json['error'] as Map<String, dynamic>),
+      data: _$nullableGenericFromJson(json['data'], fromJsonT),
+    );
+
+Map<String, dynamic> _$$ResultImplToJson<T>(
+  _$ResultImpl<T> instance,
+  Object? Function(T value) toJsonT,
+) =>
+    <String, dynamic>{
+      'request_id': instance.requestId,
+      'error': instance.error?.toJson(),
+      'data': _$nullableGenericToJson(instance.data, toJsonT),
+    };
+
+T? _$nullableGenericFromJson<T>(
+  Object? input,
+  T Function(Object? json) fromJson,
+) =>
+    input == null ? null : fromJson(input);
+
+Object? _$nullableGenericToJson<T>(
+  T? input,
+  Object? Function(T value) toJson,
+) =>
+    input == null ? null : toJson(input);
+
+_$SkiErrorImpl _$$SkiErrorImplFromJson(Map<String, dynamic> json) =>
+    _$SkiErrorImpl(
+      code: (json['code'] as num?)?.toInt() ?? 0,
+      message: json['message'] as String? ?? '未知错误',
+      details: json['details'] as String? ?? '',
+    );
+
+Map<String, dynamic> _$$SkiErrorImplToJson(_$SkiErrorImpl instance) =>
+    <String, dynamic>{
+      'code': instance.code,
+      'message': instance.message,
+      'details': instance.details,
+    };

@@ -1,11 +1,19 @@
 targets:
   $default:
     builders:
+      source_gen|combining_builder:
+        generate_for:
+          - lib/core/data.dart
+        options:
+          build_extensions:
+            ## 'lib/{{path}}/{{file}}.dart': 'lib/{{path}}/{{path}}_generated/{{file}}.g.dart'
+            'lib/core/{{file}}.dart': 'lib/core/gen/{{file}}.g.dart'
+
       json_serializable:
         enabled: true
         generate_for:
           include:
-            - lib/core/data/*.dart
+            - lib/core/data.dart
         options:
           explicit_to_json: true
           generic_argument_factories: true
@@ -15,8 +23,10 @@ targets:
         enabled: true
         generate_for:
           include:
-            - lib/core/data/*.dart
+            - lib/core/data.dart
         options:
+          build_extensions:
+            'lib/core/{{file}}.dart': 'lib/core/gen/{{file}}.freezed.dart'
           from_json: true
           to_json: true
           copy_with: false

@@ -3,6 +3,20 @@ import Dispatch
 import Foundation
 import StoreKit
 
+private func runAsync<T>(
+    _ work: @escaping () async throws -> T,
+    back onMain: @MainActor @escaping (Result<T, SKIError>) -> Void
+) {
+    Task.detached {
+        do {
+            let result = try await work()
+            await onMain(.success(result))
+        } catch {
+            await onMain(.failure(.other(error)))
+        }
+    }
+}
+
 /// 回调 update 结果
 protocol SKIUpdatesDelegate {
     func onUpdate(transaction: SKITransactionResult)
@@ -19,9 +33,9 @@ protocol SKITransaction {
     /// 是否有资格获得促销优惠(正在使用/使用过的用户), 购买提供优惠时，需要签名。
     func eligibleForPromotionOffer(_ pid: String, result: @escaping (Swift.Result<Bool, SKIError>) -> Void)
     /// 获取商品数据
-    func getProduct(_ pid: String, result: @escaping (Swift.Result<Any, SKIError>) -> Void)
+    func getProduct(_ pid: String, result: @escaping (Swift.Result<Data, SKIError>) -> Void)
     /// 支付商品
-    func purchase(_ p: Opt.Purchase, result: @escaping (SKITransactionResult) -> Void)
+    func purchase(_ p: PurchaseOpt, result: @escaping (SKITransactionResult) -> Void)
     /// 未处理的交易
     func unfinished(result: @escaping (SKITransactionsResult) -> Void)
     /// 当前的权益序列
@@ -57,40 +71,38 @@ final class SKITransactionImpl: SKITransaction {
 // Updates
 extension SKITransactionImpl {
     fileprivate final class UpdatesObserver {
-        var updates: Task<Void, Never>?
-        var resultCallback: (VerificationResult<Transaction>) -> Void
+        /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
+        /// 它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
+        var updatesTask: Task<Void, Never>?
+        var resultCallback: @MainActor (VerificationResult<Transaction>) -> Void
 
-        init(resultCallback: @escaping (VerificationResult<Transaction>) -> Void) {
+        init(resultCallback: @MainActor @escaping (VerificationResult<Transaction>) -> Void) {
             self.resultCallback = resultCallback
         }
 
         deinit {
-            updates?.cancel()
+            updatesTask?.cancel()
         }
 
         func start() {
-            guard updates == nil || updates?.isCancelled == true else {
+            guard updatesTask == nil || updatesTask?.isCancelled == true else {
                 return
             }
 
-            updates = newTransactionListenerTask()
+            updatesTask = newTransactionListenerTask()
         }
 
         func cancel() {
-            updates?.cancel()
-            updates = nil
+            updatesTask?.cancel()
+            updatesTask = nil
         }
 
         private func newTransactionListenerTask() -> Task<Void, Never> {
             Task(priority: .background) {
                 for await result in Transaction.updates {
-                    self.handle(updatedTransaction: result)
+                    await self.resultCallback(result)
                 }
             }
-        }
-
-        private func handle(updatedTransaction result: VerificationResult<Transaction>) {
-            resultCallback(result)
         }
     }
 
@@ -112,84 +124,51 @@ extension SKITransactionImpl {
 
     /// 是否有资格获得推介促销优惠(新用户)
     func eligibleForIntroOffer(_ pid: String, result: @escaping (Swift.Result<Bool, SKIError>) -> Void) {
-        Task.detached {
-            do {
-                let enable = try await self.eligibleForIntroOffer(pid)
-                result(.success(enable))
-            } catch {
-                result(.failure(.other(error)))
-            }
-        }
+        runAsync({ try await self.eligibleForIntroOffer(pid) }, back: result)
     }
 
     /// 是否有资格获得促销优惠(正在使用/使用过的用户), 购买提供优惠时，需要签名。
     func eligibleForPromotionOffer(_ pid: String, result: @escaping (Result<Bool, SKIError>) -> Void) {
-        Task.detached {
-            do {
-                let enable = try await self.eligibleForPromotionOffer(pid)
-                result(.success(enable))
-            } catch {
-                result(.failure(.other(error)))
-            }
-        }
+        runAsync({ try await self.eligibleForPromotionOffer(pid) }, back: result)
     }
 
     /// 获取商品数据
-    func getProduct(_ pid: String, result: @escaping (Swift.Result<Any, SKIError>) -> Void) {
-        Task.detached {
-            do {
-                let product = try await self.product(pid)
-                let jsonObj = try JSONSerialization.jsonObject(with: product.jsonRepresentation)
-                result(.success(jsonObj))
-            } catch {
-                result(.failure(.other(error)))
-            }
-        }
+    func getProduct(_ pid: String, result: @escaping (Swift.Result<Data, SKIError>) -> Void) {
+        runAsync({
+            let product = try await self.product(pid)
+            return product.jsonRepresentation
+        }, back: result)
     }
 
     /// 支付商品
-    func purchase(_ p: Opt.Purchase, result: @escaping (SKITransactionResult) -> Void) {
-        Task.detached {
-            do {
-                try await result(.success(self.purchase(p)))
-            } catch {
-                result(.failure(.other(error)))
-            }
-        }
+    func purchase(_ p: PurchaseOpt, result: @escaping (SKITransactionResult) -> Void) {
+        runAsync({ try await self.purchase(p) }, back: result)
     }
 
     /// 未处理的交易
     func unfinished(result: @escaping (SKITransactionsResult) -> Void) {
-        Task.detached {
-            await result(.success(self.unfinished()))
-        }
+        runAsync({ await self.unfinished() }, back: result)
     }
 
     /// 当前的权益序列
     /// As mentioned before, this only works on release mode and doesn't work on debug mode without StoreKit Testing, that is without a Configuration.storekit.
     /// https://stackoverflow.com/questions/69768519/appstore-sync-not-restoring-purchases
     func current(result: @escaping (SKITransactionsResult) -> Void) {
-        Task.detached {
-            do {
-                try await AppStore.sync()
-                await result(.success(self.current()))
-            } catch {
-                result(.failure(.other(error)))
-            }
-        }
+        runAsync({
+            try await AppStore.sync()
+            return await self.current()
+        }, back: result)
     }
 
     /// 所有交易
     func all(result: @escaping (SKITransactionsResult) -> Void) {
-        Task.detached {
-            await result(.success(self.all()))
-        }
+        runAsync({ await self.all() }, back: result)
     }
 }
 
 extension SKITransactionImpl {
     /// 支付商品
-    func purchase(_ p: Opt.Purchase) async throws -> D.Transaction {
+    func purchase(_ p: PurchaseOpt) async throws -> TransactionData {
         let product = try await product(p.productId)
 
         let result = try await product.purchase(options: p.option())
@@ -211,12 +190,12 @@ extension SKITransactionImpl {
 
     /// 交易历史记录包括应用程序尚未通过调用finish()完成的可消耗应用内购买。
     /// 它不包括已完成的可消耗产品或已完成的非续订订阅，重新购买的非消耗性产品或订阅，或已恢复的购买。
-    func all() async -> D.TransactionList {
+    func all() async -> [TransactionData] {
         await iterator(Transaction.all)
     }
 
     /// 需要处理的交易。未处理的交易会在启动时的 updates 中返回
-    func unfinished() async -> D.TransactionList {
+    func unfinished() async -> [TransactionData] {
         await iterator(Transaction.unfinished)
     }
 
@@ -226,14 +205,8 @@ extension SKITransactionImpl {
     /// - 每个非续订订阅的最新交易，包括已完成的订阅
     /// - App Store退款或撤销的产品不会出现在当前的权益中。消耗性应用内购买也不会出现在当前的权益中。
     /// [Important] 要获取未完成的消耗性产品的交易，请使用Transaction中的unfinished或all序列。
-    func current() async -> D.TransactionList {
+    func current() async -> [TransactionData] {
         await iterator(Transaction.currentEntitlements)
-    }
-
-    /// 当前的权益序列，例如询问购买交易、订阅优惠码兑换以及客户在App Store中进行的购买。
-    /// 它还会发出在另一台设备上完成的客户端在您的应用程序中的交易。
-    func updates() async -> D.TransactionList {
-        await iterator(Transaction.updates)
     }
 }
 
@@ -252,8 +225,8 @@ private extension SKITransactionImpl {
         return transactionCaches.removeValue(forKey: id)
     }
 
-    func iterator(_ transactions: Transaction.Transactions) async -> [D.Transaction] {
-        var results: D.TransactionList = []
+    func iterator(_ transactions: Transaction.Transactions) async -> [TransactionData] {
+        var results: [TransactionData] = []
         for await result in transactions {
             results.append(verificationResult(result))
         }
@@ -308,7 +281,7 @@ private extension SKITransactionImpl {
 
 private extension SKITransactionImpl {
     /// 处理支付结果
-    func purchaseResult(_ result: Product.PurchaseResult) throws -> D.Transaction {
+    func purchaseResult(_ result: Product.PurchaseResult) throws -> TransactionData {
         switch result {
         case let .success(verification):
             return verificationResult(verification)
@@ -322,7 +295,7 @@ private extension SKITransactionImpl {
     }
 
     /// 处理交易结果
-    func verificationResult(_ result: VerificationResult<Transaction>) -> D.Transaction {
+    func verificationResult(_ result: VerificationResult<Transaction>) -> TransactionData {
         switch result {
         case let .unverified(transaction, error):
             // TODO: 如何处理 unverified 时的 transaction
@@ -355,7 +328,7 @@ private extension SKITransactionImpl {
     }
 }
 
-private extension Opt.Purchase {
+private extension PurchaseOpt {
     /// 将 flutter 端传入的参数convert to [Product.PurchaseOption]
     func option() -> Set<Product.PurchaseOption> {
         var options: Set<Product.PurchaseOption> = []
@@ -394,7 +367,7 @@ extension StoreKit.Transaction {
         return env
     }
 
-    func toDTransaction(_ state: D.Transaction.State, message: String = "", details: String = "") -> D.Transaction {
-        D.Transaction(id: id, originalID: originalID, productId: productID, state: state, message: message, details: details, env: envString())
+    func toDTransaction(_ state: TransactionData.State, message: String = "", details: String = "") -> TransactionData {
+        TransactionData(id: id, originalID: originalID, productId: productID, state: state, message: message, details: details, env: envString())
     }
 }
