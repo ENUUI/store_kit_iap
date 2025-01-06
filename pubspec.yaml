@@ -1,7 +1,7 @@
 name: store_kit_iap
 description: "A new Flutter plugin project."
-version: 0.0.1
-homepage:
+version: 1.0.0
+homepage: https://github.com/ENUUI/store_kit_iap
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -22,6 +22,7 @@ dev_dependencies:
   json_serializable: ">=6.7.0 <7.0.0"
   freezed: ">=2.3.5 <3.0.0"
   pigeon: ^22.7.2
+  mockito: ^5.4.5
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

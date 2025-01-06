@@ -7,41 +7,46 @@ import 'messages.g.dart';
 import 'data.dart';
 
 class StoreKit {
-  StoreKit({@visibleForTesting StoreKitIosApi? hostApi})
-      : _hostApi = hostApi ?? StoreKitIosApi() {
+  StoreKit({
+    @visibleForTesting StoreKitIosApi? hostApi,
+    @visibleForTesting StoreKitFlutterApiImpl? flutterApi,
+  })  : _hostApi = hostApi ?? StoreKitIosApi(),
+        _flutterApi = flutterApi ?? StoreKitFlutterApiImpl() {
     StoreKitFlutterApi.setUp(_flutterApi);
   }
 
   final StoreKitIosApi _hostApi;
-  final _flutterApi = StoreKitFlutterApiImpl();
+  final StoreKitFlutterApiImpl _flutterApi;
 
   /// After call [StoreKit.all], the result will be callback by [StoreKit.allTransactions]
   Stream<List<Transaction>> get allTransactions =>
-      _flutterApi.allTransactionController.stream;
+      _flutterApi.allTransactionStream;
 
   /// After call [StoreKit.current], the result will be callback by [StoreKit.currentTransactions]
   Stream<List<Transaction>> get currentTransactions =>
-      _flutterApi.currentTransactionController.stream;
+      _flutterApi.currentTransactionStream;
 
   /// After call [StoreKit.unfinished], the result will be callback by [StoreKit.unfinishedTransactions]
   Stream<List<Transaction>> get unfinishedTransactions =>
-      _flutterApi.unfinishedTransactionController.stream;
+      _flutterApi.unfinishedTransactionStream;
 
   /// 是否有资格获得推介促销优惠(新用户)
-  Stream<bool> get introOffer =>
-      _flutterApi.introOfferTransactionController.stream;
+  Stream<bool> get introOffer => _flutterApi.introOfferStream;
 
   /// After call [StoreKit.getProduct], the result will be callback by [StoreKit.product]
-  Stream<Uint8List> get product =>
-      _flutterApi.productTransactionController.stream;
+  Stream<Uint8List> get product => _flutterApi.productStream;
 
   /// 支付完成回调
-  Stream<Transaction> get purchased =>
-      _flutterApi.purchasedTransactionController.stream;
+  Stream<Transaction> get purchased => _flutterApi.purchasedStream;
 
   /// 当开启监听交易更新时，其有更新发生，更新会由[updateTransaction]回调
   Stream<Transaction> get updateTransaction =>
-      _flutterApi.updateTransactionController.stream;
+      _flutterApi.updateTransactionStream;
+
+  void dispose() {
+    StoreKitFlutterApi.setUp(null);
+    _flutterApi.dispose();
+  }
 
   /// 是否有资格获得推介促销优惠(新用户)
   Future<void> eligibleForIntroOffer(String productId) {
